@@ -17,6 +17,7 @@ export default function AuthModal({ mode, onClose, onSwitchMode }: AuthModalProp
   const [showResetPassword, setShowResetPassword] = useState(false)
   const [resetSent, setResetSent] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [signupSuccess, setSignupSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,7 +42,12 @@ export default function AuthModal({ mode, onClose, onSwitchMode }: AuthModalProp
     if (error) {
       setError(error.message)
       setLoading(false)
+    } else if (mode === 'signup') {
+      // Show success message for signup
+      setSignupSuccess(true)
+      setLoading(false)
     } else {
+      // Sign in successful - close modal
       onClose()
     }
   }
@@ -65,29 +71,62 @@ export default function AuthModal({ mode, onClose, onSwitchMode }: AuthModalProp
           <X className="w-5 h-5" />
         </button>
 
-        <h2 
-          className="text-2xl font-bold mb-2"
-          style={{ color: 'var(--color-text)' }}
-        >
-          {showResetPassword 
-            ? 'Reset password' 
-            : mode === 'signup' 
-              ? 'Create your account' 
-              : 'Welcome back'}
-        </h2>
-        <p 
-          className="mb-6"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          {showResetPassword
-            ? "Enter your email and we'll send you a reset link"
-            : mode === 'signup' 
-              ? 'Sign up to save your books and reading progress'
-              : 'Sign in to access your library'
-          }
-        </p>
+        {signupSuccess ? (
+          <>
+            <div className="text-center py-4">
+              <div 
+                className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }}
+              >
+                <span className="text-3xl">✉️</span>
+              </div>
+              <h2 
+                className="text-2xl font-bold mb-2"
+                style={{ color: 'var(--color-text)' }}
+              >
+                Check your email
+              </h2>
+              <p 
+                className="mb-6"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                We sent a confirmation link to <strong style={{ color: 'var(--color-text)' }}>{email}</strong>. 
+                Click the link to activate your account.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-full py-3 rounded-lg font-medium transition-all"
+              style={{ backgroundColor: 'var(--color-accent)', color: 'white' }}
+            >
+              Got it
+            </button>
+          </>
+        ) : (
+          <>
+            <h2 
+              className="text-2xl font-bold mb-2"
+              style={{ color: 'var(--color-text)' }}
+            >
+              {showResetPassword 
+                ? 'Reset password' 
+                : mode === 'signup' 
+                  ? 'Create your account' 
+                  : 'Welcome back'}
+            </h2>
+            <p 
+              className="mb-6"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              {showResetPassword
+                ? "Enter your email and we'll send you a reset link"
+                : mode === 'signup' 
+                  ? 'Sign up to save your books and reading progress'
+                  : 'Sign in to access your library'
+              }
+            </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label 
               htmlFor="email" 
@@ -227,6 +266,8 @@ export default function AuthModal({ mode, onClose, onSwitchMode }: AuthModalProp
             </>
           )}
         </p>
+          </>
+        )}
       </div>
     </div>
   )
