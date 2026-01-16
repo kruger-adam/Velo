@@ -48,6 +48,27 @@ export default function Landing({ onStartReading }: LandingProps) {
     setShowAuth(true)
   }
 
+  const handleTrySample = async () => {
+    if (hasTrialBook) {
+      setAuthMode('signup')
+      setShowAuth(true)
+      return
+    }
+    try {
+      // Fetch the sample book from public folder
+      const response = await fetch('/sample-book.epub')
+      if (!response.ok) throw new Error('Sample book not found')
+      const blob = await response.blob()
+      const file = new File([blob], 'The Great Gatsby.epub', { type: 'application/epub+zip' })
+      const book = await uploadBook(file)
+      if (book) {
+        onStartReading()
+      }
+    } catch (err) {
+      console.error('Failed to load sample book:', err)
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--color-bg)' }}>
       {/* Header */}
@@ -170,6 +191,29 @@ export default function Landing({ onStartReading }: LandingProps) {
               )}
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+            <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>or</span>
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+          </div>
+
+          {/* Try sample book button */}
+          <button
+            onClick={handleTrySample}
+            disabled={loading}
+            className="w-full py-4 px-6 rounded-xl font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
+            style={{ 
+              backgroundColor: 'var(--color-surface-elevated)',
+              color: 'var(--color-text)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            <BookOpen className="w-5 h-5" style={{ color: 'var(--color-accent)' }} />
+            <span>Try with "The Great Gatsby"</span>
+            <ArrowRight className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
+          </button>
 
           {/* Trial notice */}
           <p className="text-center mt-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>
