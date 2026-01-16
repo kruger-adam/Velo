@@ -295,8 +295,11 @@ function BookCard({
     >
       {/* Cover with border and shadow */}
       <div 
-        className="aspect-[2/3] rounded-xl mb-3 overflow-hidden relative shadow-lg ring-1 ring-black/10 dark:ring-white/10"
-        style={{ backgroundColor: 'var(--color-surface-elevated)' }}
+        className="aspect-[2/3] rounded-xl mb-3 overflow-hidden relative shadow-lg border-2"
+        style={{ 
+          backgroundColor: 'var(--color-surface-elevated)',
+          borderColor: 'var(--color-border)',
+        }}
       >
         {book.coverUrl ? (
           <img
@@ -337,9 +340,9 @@ function BookCard({
         )}
       </div>
 
-      {/* Info - 3 lines for title */}
+      {/* Info - up to 5 lines for title */}
       <h3 
-        className="font-medium text-sm line-clamp-3 mb-1 leading-snug"
+        className="font-medium text-sm line-clamp-5 mb-1 leading-snug"
         style={{ color: 'var(--color-text)' }}
       >
         {book.title}
