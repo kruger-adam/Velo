@@ -18,43 +18,61 @@ async function extractEpubFromZip(file: File): Promise<File> {
   const zip = await JSZip.loadAsync(file)
   
   // Find .epub file inside the zip using Object.keys instead of forEach
-  // This avoids TypeScript narrowing issues with callbacks
   const fileNames = Object.keys(zip.files)
-  console.log('[Upload] Files in zip:', fileNames)
+  console.log('[Upload] Files in zip:', fileNames.length, 'files')
   
-  // Look for .epub file, handling nested directories
+  // Case 1: Look for an actual .epub file inside the zip
   let epubFileName = fileNames.find(name => 
     name.toLowerCase().endsWith('.epub') && !zip.files[name].dir
   )
   
-  // If not found, the zip might BE an epub (epub files are zip files internally)
-  // Check if it has typical epub structure (mimetype, META-INF, etc.)
-  if (!epubFileName) {
-    const hasEpubStructure = fileNames.some(name => 
-      name === 'mimetype' || name.startsWith('META-INF/') || name.startsWith('OEBPS/')
-    )
-    
-    if (hasEpubStructure) {
-      console.log('[Upload] Zip appears to be an ePub file directly (has epub internal structure)')
-      // Return the original file but renamed to .epub
-      const epubName = file.name.replace(/\.zip$/i, '')
-      return new File([file], epubName, { type: 'application/epub+zip' })
-    }
-    
-    throw new Error('No .epub file found inside the zip archive. Files found: ' + fileNames.slice(0, 10).join(', '))
+  if (epubFileName) {
+    console.log('[Upload] Found ePub file in zip:', epubFileName)
+    const epubBlob = await zip.files[epubFileName].async('blob')
+    return new File([epubBlob], epubFileName, { type: 'application/epub+zip' })
   }
   
-  console.log('[Upload] Found ePub in zip:', epubFileName)
+  // Case 2: Check if the zip contains an EXTRACTED epub folder (folder ending in .epub/)
+  const epubFolder = fileNames.find(name => 
+    name.toLowerCase().endsWith('.epub/') && zip.files[name].dir
+  )
   
-  // Extract the epub as a blob
-  const epubBlob = await zip.files[epubFileName].async('blob')
+  if (epubFolder) {
+    console.log('[Upload] Found extracted ePub folder:', epubFolder, '- repackaging...')
+    
+    // Create a new zip with the contents of the epub folder
+    const newZip = new JSZip()
+    const folderPrefix = epubFolder
+    
+    for (const fileName of fileNames) {
+      if (fileName.startsWith(folderPrefix) && fileName !== folderPrefix) {
+        const relativePath = fileName.slice(folderPrefix.length)
+        if (relativePath && !zip.files[fileName].dir) {
+          const content = await zip.files[fileName].async('blob')
+          newZip.file(relativePath, content)
+        }
+      }
+    }
+    
+    // Generate the epub as a blob
+    const epubBlob = await newZip.generateAsync({ type: 'blob', mimeType: 'application/epub+zip' })
+    const epubName = epubFolder.slice(0, -1) // Remove trailing slash
+    console.log('[Upload] Repackaged ePub:', epubName)
+    return new File([epubBlob], epubName, { type: 'application/epub+zip' })
+  }
   
-  // Create a new File object with the correct name
-  const extractedFile = new File([epubBlob], epubFileName, { type: 'application/epub+zip' })
+  // Case 3: The zip might BE an epub (epub files are zip files internally)
+  const hasEpubStructure = fileNames.some(name => 
+    name === 'mimetype' || name.startsWith('META-INF/') || name.startsWith('OEBPS/')
+  )
   
-  console.log('[Upload] Extracted ePub:', { name: extractedFile.name, size: `${(extractedFile.size / 1024 / 1024).toFixed(2)} MB` })
+  if (hasEpubStructure) {
+    console.log('[Upload] Zip appears to be an ePub file directly (has epub internal structure)')
+    const epubName = file.name.replace(/\.zip$/i, '')
+    return new File([file], epubName, { type: 'application/epub+zip' })
+  }
   
-  return extractedFile
+  throw new Error('No .epub file found inside the zip archive. Files found: ' + fileNames.slice(0, 5).join(', '))
 }
 
 export interface Book {
