@@ -43,9 +43,9 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* iOS PWA safe area support */
+/* iOS PWA safe area support - adds base padding plus safe area inset */
 .safe-top {
-  padding-top: env(safe-area-inset-top, 0);
+  padding-top: calc(2.5rem + env(safe-area-inset-top, 0));
 }
 
 .safe-bottom {
