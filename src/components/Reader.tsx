@@ -9,7 +9,9 @@ import {
   Sun,
   Minus,
   Plus,
-  RotateCcw
+  RotateCcw,
+  List,
+  X
 } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useBooks, type Book } from '../contexts/BookContext'
@@ -34,6 +36,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false)
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup')
   const [progressLoaded, setProgressLoaded] = useState(false)
+  const [showChapters, setShowChapters] = useState(false)
   
   const timerRef = useRef<number | null>(null)
   const controlsTimeoutRef = useRef<number | null>(null)
@@ -201,6 +204,13 @@ export default function Reader({ book, onBack }: ReaderProps) {
     resetControlsTimeout()
   }
 
+  const handleJumpToChapter = (chapterWordIndex: number) => {
+    setWordIndex(chapterWordIndex)
+    setIsPlaying(false)
+    setShowChapters(false)
+    resetControlsTimeout()
+  }
+
   const handleSpeedChange = (delta: number) => {
     setWpm(prev => Math.max(100, Math.min(1000, prev + delta)))
     resetControlsTimeout()
@@ -250,16 +260,31 @@ export default function Reader({ book, onBack }: ReaderProps) {
           </h1>
         </div>
 
-        <button
-          onClick={toggleDarkMode}
-          className="p-2 rounded-lg transition-colors hover:opacity-70"
-          style={{ 
-            backgroundColor: 'var(--color-surface-elevated)',
-            color: 'var(--color-text)',
-          }}
-        >
-          {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          {book.chapters.length > 0 && (
+            <button
+              onClick={() => setShowChapters(true)}
+              className="p-2 rounded-lg transition-colors hover:opacity-70"
+              style={{ 
+                backgroundColor: 'var(--color-surface-elevated)',
+                color: 'var(--color-text)',
+              }}
+              title="Chapters"
+            >
+              <List className="w-5 h-5" />
+            </button>
+          )}
+          <button
+            onClick={toggleDarkMode}
+            className="p-2 rounded-lg transition-colors hover:opacity-70"
+            style={{ 
+              backgroundColor: 'var(--color-surface-elevated)',
+              color: 'var(--color-text)',
+            }}
+          >
+            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+        </div>
       </header>
 
       {/* Trial mode notice */}
@@ -525,6 +550,77 @@ export default function Reader({ book, onBack }: ReaderProps) {
           onClose={() => setShowAuthPrompt(false)}
           onSwitchMode={setAuthMode}
         />
+      )}
+
+      {/* Chapters panel */}
+      {showChapters && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowChapters(false)}
+        >
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0"
+            style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+          />
+          
+          {/* Panel */}
+          <div 
+            className="relative w-full max-w-md max-h-[80vh] rounded-2xl overflow-hidden flex flex-col"
+            style={{ backgroundColor: 'var(--color-surface)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div 
+              className="flex items-center justify-between p-4 border-b"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <h2 
+                className="text-lg font-semibold"
+                style={{ color: 'var(--color-text)' }}
+              >
+                Chapters
+              </h2>
+              <button
+                onClick={() => setShowChapters(false)}
+                className="p-2 rounded-lg hover:opacity-70"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Chapter list */}
+            <div className="overflow-y-auto flex-1 p-2">
+              {book.chapters.map((chapter, index) => {
+                const isCurrentChapter = wordIndex >= chapter.wordIndex && 
+                  (index === book.chapters.length - 1 || wordIndex < book.chapters[index + 1].wordIndex)
+                
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleJumpToChapter(chapter.wordIndex)}
+                    className="w-full text-left px-4 py-3 rounded-lg mb-1 transition-colors hover:opacity-80"
+                    style={{ 
+                      backgroundColor: isCurrentChapter ? 'var(--color-accent)' : 'var(--color-surface-elevated)',
+                      color: isCurrentChapter ? 'white' : 'var(--color-text)',
+                    }}
+                  >
+                    <div className="font-medium">{chapter.title}</div>
+                    <div 
+                      className="text-xs mt-1"
+                      style={{ 
+                        color: isCurrentChapter ? 'rgba(255,255,255,0.7)' : 'var(--color-text-muted)' 
+                      }}
+                    >
+                      Word {chapter.wordIndex.toLocaleString()}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

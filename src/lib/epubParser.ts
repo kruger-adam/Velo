@@ -1,10 +1,16 @@
 import ePub from 'epubjs'
 
+export interface Chapter {
+  title: string
+  wordIndex: number  // Starting word index for this chapter
+}
+
 export interface ParsedBook {
   title: string
   author: string | null
   coverUrl: string | null
   words: string[]
+  chapters: Chapter[]
 }
 
 export async function parseEpub(file: File): Promise<ParsedBook> {
@@ -36,6 +42,7 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
         
         // Extract all text content using epub.js section API
         const words: string[] = []
+        const chapters: Chapter[] = []
         
         // Get spine items - epub.js uses spineItems array
         const spine = book.spine as unknown as { 
@@ -62,15 +69,25 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
             // Cast to any to handle epub.js's dynamic return types
             const contentsAny = contents as unknown as Element | { document?: Document }
             let textContent = ''
+            let chapterTitle = ''
             
             // Try as Element first (querySelector approach)
             if ('querySelector' in contentsAny && typeof contentsAny.querySelector === 'function') {
               const body = contentsAny.querySelector('body')
               textContent = body?.textContent || (contentsAny as Element).textContent || ''
+              
+              // Try to extract chapter title from headings
+              const h1 = contentsAny.querySelector('h1')
+              const h2 = contentsAny.querySelector('h2')
+              const h3 = contentsAny.querySelector('h3')
+              chapterTitle = (h1?.textContent || h2?.textContent || h3?.textContent || '').trim()
+              
               console.log('[epubParser] Found body via querySelector:', !!body)
             } else if ('document' in contentsAny && contentsAny.document) {
               // Has document property
               textContent = contentsAny.document.body?.textContent || ''
+              const h1 = contentsAny.document.querySelector('h1')
+              chapterTitle = (h1?.textContent || '').trim()
               console.log('[epubParser] Found body via document property')
             } else if ('body' in contentsAny) {
               // Might be a Document directly
@@ -86,6 +103,19 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
               .replace(/\s+/g, ' ')
               .trim()
               .split(' ')
+            
+            // Add chapter if we found a meaningful title and it has content
+            if (chapterTitle && itemWords.length > 0) {
+              // Clean up the title
+              chapterTitle = chapterTitle.replace(/\s+/g, ' ').trim()
+              if (chapterTitle.length > 0 && chapterTitle.length < 100) {
+                chapters.push({
+                  title: chapterTitle,
+                  wordIndex: words.length  // Current word count is the starting index
+                })
+                console.log('[epubParser] Found chapter:', chapterTitle, 'at word index:', words.length)
+              }
+            }
               .filter(word => word.length > 0)
             
             console.log('[epubParser] Words from section', i, ':', itemWords.length)
@@ -96,12 +126,14 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
         }
         
         console.log('[epubParser] Total words extracted:', words.length)
+        console.log('[epubParser] Chapters found:', chapters.length, chapters.map(c => c.title))
         
         resolve({
           title,
           author,
           coverUrl,
           words,
+          chapters,
         })
       } catch (err) {
         reject(err)

@@ -75,6 +75,11 @@ async function extractEpubFromZip(file: File): Promise<File> {
   throw new Error('No .epub file found inside the zip archive. Files found: ' + fileNames.slice(0, 5).join(', '))
 }
 
+export interface Chapter {
+  title: string
+  wordIndex: number
+}
+
 export interface Book {
   id: string
   title: string
@@ -82,6 +87,7 @@ export interface Book {
   coverUrl: string | null
   totalWords: number
   words: string[]
+  chapters: Chapter[]
   filePath?: string
 }
 
@@ -139,6 +145,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         coverUrl: book.cover_url,
         totalWords: book.total_words,
         words: [], // Words loaded on demand when opening the book
+        chapters: [], // Chapters loaded on demand when opening the book
         filePath: book.file_path,
       }))
 
@@ -185,6 +192,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
           coverUrl: parsed.coverUrl,
           totalWords: parsed.words.length,
           words: parsed.words,
+          chapters: parsed.chapters,
         }
         setTrialBook(book)
         setCurrentBook(book)
@@ -266,6 +274,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         coverUrl: bookData.cover_url,
         totalWords: bookData.total_words,
         words: parsed.words,
+        chapters: parsed.chapters,
         filePath: bookData.file_path,
       }
 
@@ -302,8 +311,8 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         
         const file = new File([data], 'book.epub')
         const parsed = await parseEpub(file)
-        console.log('[BookContext] Loaded words from storage:', parsed.words.length)
-        book = { ...book, words: parsed.words, totalWords: parsed.words.length }
+        console.log('[BookContext] Loaded words from storage:', parsed.words.length, 'chapters:', parsed.chapters.length)
+        book = { ...book, words: parsed.words, totalWords: parsed.words.length, chapters: parsed.chapters }
       }
 
       console.log('[BookContext] Setting currentBook:', { totalWords: book.totalWords, wordsLength: book.words.length })
