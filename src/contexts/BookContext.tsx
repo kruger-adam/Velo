@@ -208,20 +208,27 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
 
       // Load progress
       if (user) {
-        const { data: progressData } = await supabase
+        // Use maybeSingle() instead of single() to avoid 406 error when no row exists
+        const { data: progressData, error: progressError } = await supabase
           .from('reading_progress')
           .select('*')
           .eq('user_id', user.id)
           .eq('book_id', book.id)
-          .single()
+          .maybeSingle()
+
+        if (progressError) {
+          console.error('[BookContext] Error loading progress:', progressError)
+        }
 
         if (progressData) {
+          console.log('[BookContext] Loaded progress:', progressData)
           setCurrentProgress({
             bookId: book.id,
             currentWordIndex: progressData.current_word_index,
             wpm: progressData.wpm,
           })
         } else {
+          console.log('[BookContext] No existing progress, starting fresh')
           setCurrentProgress({ bookId: book.id, currentWordIndex: 0, wpm: 300 })
         }
       } else {
@@ -241,7 +248,8 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
 
     // Only persist for signed-in users
     if (user && !currentBook.id.startsWith('trial-')) {
-      await supabase
+      console.log('[BookContext] Saving progress:', { wordIndex, wpm, bookId: currentBook.id })
+      const { error } = await supabase
         .from('reading_progress')
         .upsert({
           user_id: user.id,
@@ -249,18 +257,29 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
           current_word_index: wordIndex,
           wpm,
         }, { onConflict: 'user_id,book_id' })
+      
+      if (error) {
+        console.error('[BookContext] Error saving progress:', error)
+      } else {
+        console.log('[BookContext] Progress saved successfully')
+      }
     }
   }, [user, currentBook])
 
   const getProgress = useCallback(async (bookId: string): Promise<ReadingProgress | null> => {
     if (!user) return null
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('reading_progress')
       .select('*')
       .eq('user_id', user.id)
       .eq('book_id', bookId)
-      .single()
+      .maybeSingle()
+
+    if (error) {
+      console.error('[BookContext] Error getting progress:', error)
+      return null
+    }
 
     if (data) {
       return {
