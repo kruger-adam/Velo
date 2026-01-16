@@ -229,7 +229,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
           book_id: currentBook.id,
           current_word_index: wordIndex,
           wpm,
-        })
+        }, { onConflict: 'user_id,book_id' })
     }
   }, [user, currentBook])
 
