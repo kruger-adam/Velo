@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
 import JSZip from 'jszip'
 import { useAuth } from './AuthContext'
 import { supabase } from '../lib/supabase'
@@ -124,10 +124,17 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const [currentProgress, setCurrentProgress] = useState<ReadingProgress | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const addingSampleBookRef = useRef(false)
 
   // Helper to add sample book for new users
   const addSampleBook = useCallback(async () => {
     if (!user) return null
+    
+    // Synchronous check first (prevents race conditions)
+    if (addingSampleBookRef.current) {
+      console.log('[BookContext] Already adding sample book, skipping')
+      return null
+    }
     
     // Prevent duplicate additions using localStorage flag
     const sampleBookKey = `velo-sample-added-${user.id}`
@@ -136,7 +143,8 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       return null
     }
     
-    // Mark as adding immediately to prevent race conditions
+    // Mark as adding immediately (synchronous)
+    addingSampleBookRef.current = true
     localStorage.setItem(sampleBookKey, 'true')
     
     try {
@@ -196,7 +204,8 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       } as Book
     } catch (err) {
       console.error('[BookContext] Failed to add sample book:', err)
-      // Clear the flag so it can be retried
+      // Clear the flags so it can be retried
+      addingSampleBookRef.current = false
       localStorage.removeItem(`velo-sample-added-${user.id}`)
       return null
     }
