@@ -12,7 +12,7 @@ interface LibraryProps {
 export default function Library({ onOpenBook }: LibraryProps) {
   const { user, signOut } = useAuth()
   const { isDarkMode, toggleDarkMode } = useTheme()
-  const { books, loadBooks, uploadBook, deleteBook, loading, getProgress } = useBooks()
+  const { books, loadBooks, uploadBook, deleteBook, loading, error, getProgress } = useBooks()
   const [bookProgress, setBookProgress] = useState<Record<string, number>>({})
   const [uploading, setUploading] = useState(false)
 
@@ -125,6 +125,21 @@ export default function Library({ onOpenBook }: LibraryProps) {
           </button>
         </div>
       </header>
+
+      {/* Error banner */}
+      {error && (
+        <div 
+          className="mx-6 mt-4 px-4 py-3 rounded-lg flex items-center gap-3"
+          style={{ 
+            backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+            borderColor: 'rgba(239, 68, 68, 0.3)',
+            border: '1px solid',
+          }}
+        >
+          <span className="text-red-500">⚠️</span>
+          <p className="flex-1 text-sm" style={{ color: 'var(--color-text)' }}>{error}</p>
+        </div>
+      )}
 
       {/* Main content */}
       <main className="max-w-6xl mx-auto px-6 py-8">

@@ -297,7 +297,26 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       return book
     } catch (err) {
       console.error('[Upload] ✗ Upload failed after', Math.round(performance.now() - startTime), 'ms:', err)
-      setError(err instanceof Error ? err.message : 'Failed to upload book')
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Failed to upload book'
+      if (err instanceof Error) {
+        if (err.message.includes('No .epub file found')) {
+          errorMessage = 'No ePub file found in the zip. Please upload a valid ePub file.'
+        } else if (err.message.includes('Failed to parse')) {
+          errorMessage = 'Unable to read this ePub file. It may be corrupted or in an unsupported format.'
+        } else if (err.message.includes('Not authenticated')) {
+          errorMessage = 'Please sign in to upload books.'
+        } else if (err.message.includes('storage') || err.message.includes('upload')) {
+          errorMessage = 'Failed to save the book. Please try again.'
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.'
+        } else {
+          errorMessage = err.message
+        }
+      }
+      
+      setError(errorMessage)
       return null
     } finally {
       setLoading(false)

@@ -9,7 +9,7 @@ interface LandingProps {
 }
 
 export default function Landing({ onStartReading }: LandingProps) {
-  const { uploadBook, loading, hasTrialBook } = useBooks()
+  const { uploadBook, loading, error, hasTrialBook } = useBooks()
   const [showAuth, setShowAuth] = useState(false)
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup')
 
@@ -229,6 +229,21 @@ export default function Landing({ onStartReading }: LandingProps) {
             <span>Try with "Alice in Wonderland"</span>
             <ArrowRight className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
           </button>
+
+          {/* Error message */}
+          {error && (
+            <div 
+              className="mt-4 px-4 py-3 rounded-lg flex items-center gap-3"
+              style={{ 
+                backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+                borderColor: 'rgba(239, 68, 68, 0.3)',
+                border: '1px solid',
+              }}
+            >
+              <span className="text-red-500">⚠️</span>
+              <p className="flex-1 text-sm" style={{ color: 'var(--color-text)' }}>{error}</p>
+            </div>
+          )}
 
           {/* Trial notice */}
           <p className="text-center mt-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>
