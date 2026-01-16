@@ -9,7 +9,6 @@ import {
   Sun,
   Minus,
   Plus,
-  RotateCcw,
   List,
   X
 } from 'lucide-react'
@@ -231,19 +230,16 @@ export default function Reader({ book, onBack }: ReaderProps) {
     }
   }
 
+  // Skip based on time (seconds) converted to words using current WPM
   const handleSkipBack = () => {
-    setWordIndex(prev => Math.max(0, prev - 50))
+    const wordsToSkip = Math.round((wpm / 60) * 15) // 15 seconds
+    setWordIndex(prev => Math.max(0, prev - wordsToSkip))
     resetControlsTimeout()
   }
 
   const handleSkipForward = () => {
-    setWordIndex(prev => Math.min(book.totalWords - 1, prev + 50))
-    resetControlsTimeout()
-  }
-
-  const handleRestart = () => {
-    setWordIndex(0)
-    setIsPlaying(false)
+    const wordsToSkip = Math.round((wpm / 60) * 30) // 30 seconds
+    setWordIndex(prev => Math.min(book.totalWords - 1, prev + wordsToSkip))
     resetControlsTimeout()
   }
 
@@ -485,25 +481,13 @@ export default function Reader({ book, onBack }: ReaderProps) {
         {/* Playback controls */}
         <div className="flex items-center justify-center gap-4 mb-6">
           <button
-            onClick={handleRestart}
-            className="p-3 rounded-lg transition-colors hover:opacity-70"
-            style={{ 
-              backgroundColor: 'var(--color-surface-elevated)',
-              color: 'var(--color-text)',
-            }}
-            title="Restart"
-          >
-            <RotateCcw className="w-5 h-5" />
-          </button>
-          
-          <button
             onClick={handleSkipBack}
             className="p-3 rounded-lg transition-colors hover:opacity-70"
             style={{ 
               backgroundColor: 'var(--color-surface-elevated)',
               color: 'var(--color-text)',
             }}
-            title="Skip back 50 words"
+            title="Skip back 15 seconds"
           >
             <SkipBack className="w-5 h-5" />
           </button>
@@ -530,12 +514,10 @@ export default function Reader({ book, onBack }: ReaderProps) {
               backgroundColor: 'var(--color-surface-elevated)',
               color: 'var(--color-text)',
             }}
-            title="Skip forward 50 words"
+            title="Skip forward 30 seconds"
           >
             <SkipForward className="w-5 h-5" />
           </button>
-
-          <div className="w-12" /> {/* Spacer for symmetry */}
         </div>
 
         {/* Speed and Font Size controls */}
