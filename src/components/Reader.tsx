@@ -102,22 +102,6 @@ export default function Reader({ book, onBack }: ReaderProps) {
     }
   }, [isPlaying])
 
-  // Toggle controls visibility (for tap on mobile)
-  const toggleControls = useCallback(() => {
-    if (isPlaying) {
-      if (showControls) {
-        // If controls are showing, hide them immediately
-        if (controlsTimeoutRef.current) {
-          clearTimeout(controlsTimeoutRef.current)
-        }
-        setShowControls(false)
-      } else {
-        // If controls are hidden, show them and start timeout
-        resetControlsTimeout()
-      }
-    }
-  }, [isPlaying, showControls, resetControlsTimeout])
-
   // Handle mouse movement to show controls (desktop)
   useEffect(() => {
     const handleMouseMove = () => {
