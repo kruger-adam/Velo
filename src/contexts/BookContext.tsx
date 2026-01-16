@@ -581,6 +581,12 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         console.error('[BookContext] Error saving progress:', error)
       } else {
         console.log('[BookContext] Progress saved successfully')
+        
+        // Also update book's updated_at so it sorts to top of library
+        await supabase
+          .from('books')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', currentBook.id)
       }
     }
   }, [user, currentBook])
