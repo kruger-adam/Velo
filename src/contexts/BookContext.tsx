@@ -20,12 +20,28 @@ async function extractEpubFromZip(file: File): Promise<File> {
   // Find .epub file inside the zip using Object.keys instead of forEach
   // This avoids TypeScript narrowing issues with callbacks
   const fileNames = Object.keys(zip.files)
-  const epubFileName = fileNames.find(name => 
+  console.log('[Upload] Files in zip:', fileNames)
+  
+  // Look for .epub file, handling nested directories
+  let epubFileName = fileNames.find(name => 
     name.toLowerCase().endsWith('.epub') && !zip.files[name].dir
   )
   
+  // If not found, the zip might BE an epub (epub files are zip files internally)
+  // Check if it has typical epub structure (mimetype, META-INF, etc.)
   if (!epubFileName) {
-    throw new Error('No .epub file found inside the zip archive')
+    const hasEpubStructure = fileNames.some(name => 
+      name === 'mimetype' || name.startsWith('META-INF/') || name.startsWith('OEBPS/')
+    )
+    
+    if (hasEpubStructure) {
+      console.log('[Upload] Zip appears to be an ePub file directly (has epub internal structure)')
+      // Return the original file but renamed to .epub
+      const epubName = file.name.replace(/\.zip$/i, '')
+      return new File([file], epubName, { type: 'application/epub+zip' })
+    }
+    
+    throw new Error('No .epub file found inside the zip archive. Files found: ' + fileNames.slice(0, 10).join(', '))
   }
   
   console.log('[Upload] Found ePub in zip:', epubFileName)
