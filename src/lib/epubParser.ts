@@ -38,10 +38,27 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
         const spine = book.spine as unknown as { items: Array<{ load: (book: ReturnType<typeof ePub>) => Promise<unknown> }> }
         const words: string[] = []
         
-        for (const item of spine.items) {
+        console.log('[epubParser] Spine:', spine)
+        console.log('[epubParser] Spine items count:', spine?.items?.length)
+        
+        if (!spine?.items || spine.items.length === 0) {
+          console.warn('[epubParser] No spine items found, trying alternative method')
+          // Try using the navigation/sections approach
           try {
+            const nav = await book.loaded.navigation
+            console.log('[epubParser] Navigation:', nav)
+          } catch (navErr) {
+            console.error('[epubParser] Navigation error:', navErr)
+          }
+        }
+        
+        for (const item of (spine?.items || [])) {
+          try {
+            console.log('[epubParser] Loading spine item:', item)
             const doc = await item.load(book) as Document
+            console.log('[epubParser] Loaded doc:', doc)
             const textContent = doc.body?.textContent || ''
+            console.log('[epubParser] Text content length:', textContent.length)
             
             // Split into words, cleaning up whitespace
             const itemWords = textContent
@@ -50,11 +67,14 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
               .split(' ')
               .filter(word => word.length > 0)
             
+            console.log('[epubParser] Words from this item:', itemWords.length)
             words.push(...itemWords)
-          } catch {
-            // Skip problematic sections
+          } catch (itemErr) {
+            console.error('[epubParser] Error loading spine item:', itemErr)
           }
         }
+        
+        console.log('[epubParser] Total words extracted:', words.length)
         
         resolve({
           title,
