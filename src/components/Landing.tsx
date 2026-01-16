@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, Zap, BookOpen, Eye, ArrowRight, List, Type, Moon, Smartphone } from 'lucide-react'
+import { Upload, Zap, BookOpen, Eye, ArrowRight, List, Type, Moon } from 'lucide-react'
 import { useBooks } from '../contexts/BookContext'
 import AuthModal from './AuthModal'
 
