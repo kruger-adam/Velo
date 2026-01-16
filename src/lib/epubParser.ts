@@ -80,7 +80,21 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
               const h1 = contentsAny.querySelector('h1')
               const h2 = contentsAny.querySelector('h2')
               const h3 = contentsAny.querySelector('h3')
-              chapterTitle = (h1?.textContent || h2?.textContent || h3?.textContent || '').trim()
+              // Also try common title class patterns
+              const titleEl = contentsAny.querySelector('.chapter-title, .title, [class*="chapter"], [class*="heading"]')
+              chapterTitle = (h1?.textContent || h2?.textContent || h3?.textContent || titleEl?.textContent || '').trim()
+              
+              // If still no title, use the first non-empty text line (often the chapter name)
+              if (!chapterTitle && textContent) {
+                const lines = textContent.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+                if (lines.length > 0) {
+                  // Use first line if it looks like a title (short, no periods)
+                  const firstLine = lines[0]
+                  if (firstLine.length > 0 && firstLine.length < 80 && !firstLine.includes('.')) {
+                    chapterTitle = firstLine
+                  }
+                }
+              }
               
               console.log('[epubParser] Found body via querySelector:', !!body)
             } else if ('document' in contentsAny && contentsAny.document) {
@@ -88,6 +102,14 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
               textContent = contentsAny.document.body?.textContent || ''
               const h1 = contentsAny.document.querySelector('h1')
               chapterTitle = (h1?.textContent || '').trim()
+              
+              // Fallback to first line
+              if (!chapterTitle && textContent) {
+                const lines = textContent.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+                if (lines.length > 0 && lines[0].length < 80 && !lines[0].includes('.')) {
+                  chapterTitle = lines[0]
+                }
+              }
               console.log('[epubParser] Found body via document property')
             } else if ('body' in contentsAny) {
               // Might be a Document directly
