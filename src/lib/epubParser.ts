@@ -34,30 +34,33 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
           // Cover not available
         }
         
-        // Extract all text content
-        const spine = book.spine as unknown as { items: Array<{ load: (book: ReturnType<typeof ePub>) => Promise<unknown> }> }
+        // Extract all text content using epub.js section API
         const words: string[] = []
         
-        console.log('[epubParser] Spine:', spine)
-        console.log('[epubParser] Spine items count:', spine?.items?.length)
-        
-        if (!spine?.items || spine.items.length === 0) {
-          console.warn('[epubParser] No spine items found, trying alternative method')
-          // Try using the navigation/sections approach
-          try {
-            const nav = await book.loaded.navigation
-            console.log('[epubParser] Navigation:', nav)
-          } catch (navErr) {
-            console.error('[epubParser] Navigation error:', navErr)
-          }
+        // Get spine items - epub.js uses spineItems array
+        const spine = book.spine as unknown as { 
+          spineItems: Array<{ href: string; index: number }>,
+          each: (callback: (section: { load: (book: unknown) => Promise<{ document: Document }> }) => void) => void
         }
         
-        for (const item of (spine?.items || [])) {
+        console.log('[epubParser] Spine items:', spine?.spineItems?.length)
+        
+        // Use book.section() to load each section by index
+        for (let i = 0; i < (spine?.spineItems?.length || 0); i++) {
           try {
-            console.log('[epubParser] Loading spine item:', item)
-            const doc = await item.load(book) as Document
-            console.log('[epubParser] Loaded doc:', doc)
-            const textContent = doc.body?.textContent || ''
+            const section = book.section(i)
+            if (!section) {
+              console.log('[epubParser] No section at index', i)
+              continue
+            }
+            
+            console.log('[epubParser] Loading section', i, section)
+            const contents = await section.load(book.load.bind(book))
+            console.log('[epubParser] Section contents:', contents)
+            
+            // contents should be a Document or have a document property
+            const doc = (contents as unknown as { document?: Document })?.document || contents as unknown as Document
+            const textContent = doc?.body?.textContent || ''
             console.log('[epubParser] Text content length:', textContent.length)
             
             // Split into words, cleaning up whitespace
@@ -67,10 +70,10 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
               .split(' ')
               .filter(word => word.length > 0)
             
-            console.log('[epubParser] Words from this item:', itemWords.length)
+            console.log('[epubParser] Words from section', i, ':', itemWords.length)
             words.push(...itemWords)
-          } catch (itemErr) {
-            console.error('[epubParser] Error loading spine item:', itemErr)
+          } catch (sectionErr) {
+            console.error('[epubParser] Error loading section', i, ':', sectionErr)
           }
         }
         
