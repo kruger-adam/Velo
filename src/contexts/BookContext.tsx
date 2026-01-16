@@ -3,7 +3,7 @@ import JSZip from 'jszip'
 import { useAuth } from './AuthContext'
 import { supabase } from '../lib/supabase'
 import { parseEpub } from '../lib/epubParser'
-import { SAMPLE_BOOKS, isSampleBook, getSampleBookPath, getOpenLibraryCoverUrl } from '../lib/sampleBooks'
+import { SAMPLE_BOOKS, isSampleBook, getSampleBookPath, getSampleBookCoverUrl } from '../lib/sampleBooks'
 
 // Helper to extract .epub from .zip files
 async function extractEpubFromZip(file: File): Promise<File> {
@@ -170,9 +170,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
             title: sampleBook.title,
             author: sampleBook.author,
             file_path: `sample://${sampleBook.fileName}`, // Special prefix for sample books
-            cover_url: sampleBook.openLibraryCoverId 
-              ? getOpenLibraryCoverUrl(sampleBook.openLibraryCoverId, 'L')
-              : null,
+            cover_url: getSampleBookCoverUrl(sampleBook.id), // Local static cover
             total_words: parsed.words.length,
           })
           .select()
