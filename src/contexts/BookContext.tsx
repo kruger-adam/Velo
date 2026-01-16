@@ -81,15 +81,19 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const uploadBook = useCallback(async (file: File): Promise<Book | null> => {
     setLoading(true)
     setError(null)
+    const startTime = performance.now()
 
     try {
-      console.log('[BookContext] Parsing epub file:', file.name)
+      console.log('[Upload] Starting upload:', { fileName: file.name, fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB` })
+      
+      // Step 1: Parse ePub
+      const parseStart = performance.now()
+      console.log('[Upload] Step 1/4: Parsing ePub...')
       const parsed = await parseEpub(file)
-      console.log('[BookContext] Parsed result:', {
+      console.log('[Upload] Step 1/4: Parsing complete in', Math.round(performance.now() - parseStart), 'ms', {
         title: parsed.title,
-        author: parsed.author,
         wordsCount: parsed.words.length,
-        firstWords: parsed.words.slice(0, 10),
+        hasCover: !!parsed.coverUrl,
       })
       
       if (isTrialMode) {
@@ -105,6 +109,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         setTrialBook(book)
         setCurrentBook(book)
         setCurrentProgress({ bookId: book.id, currentWordIndex: 0, wpm: 300 })
+        console.log('[Upload] Trial mode complete in', Math.round(performance.now() - startTime), 'ms')
         return book
       }
 
@@ -113,17 +118,24 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
 
       const filePath = `${user.id}/${Date.now()}-${file.name}`
       
-      // Upload file to storage
+      // Step 2: Upload file to storage
+      const uploadStart = performance.now()
+      console.log('[Upload] Step 2/4: Uploading ePub to storage...')
       const { error: uploadError } = await supabase.storage
         .from('books')
         .upload(filePath, file)
+      console.log('[Upload] Step 2/4: File upload complete in', Math.round(performance.now() - uploadStart), 'ms')
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('[Upload] File upload failed:', uploadError)
+        throw uploadError
+      }
 
-      // Upload cover if exists
+      // Step 3: Upload cover if exists
       let coverUrl = null
       if (parsed.coverUrl) {
-        // Convert base64 to blob and upload
+        const coverStart = performance.now()
+        console.log('[Upload] Step 3/4: Uploading cover...')
         const coverResponse = await fetch(parsed.coverUrl)
         const coverBlob = await coverResponse.blob()
         const coverPath = `${user.id}/${Date.now()}-cover.jpg`
@@ -137,11 +149,17 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
             .from('books')
             .getPublicUrl(coverPath)
           coverUrl = urlData.publicUrl
+        } else {
+          console.warn('[Upload] Cover upload failed (non-fatal):', coverError)
         }
+        console.log('[Upload] Step 3/4: Cover upload complete in', Math.round(performance.now() - coverStart), 'ms')
+      } else {
+        console.log('[Upload] Step 3/4: No cover to upload, skipping')
       }
 
-      // Insert book metadata
-      console.log('[BookContext] Inserting book with total_words:', parsed.words.length)
+      // Step 4: Insert book metadata
+      const dbStart = performance.now()
+      console.log('[Upload] Step 4/4: Saving to database...')
       const { data: bookData, error: dbError } = await supabase
         .from('books')
         .insert({
@@ -154,9 +172,12 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         })
         .select()
         .single()
+      console.log('[Upload] Step 4/4: Database save complete in', Math.round(performance.now() - dbStart), 'ms')
 
-      console.log('[BookContext] Insert result:', { bookData, dbError })
-      if (dbError) throw dbError
+      if (dbError) {
+        console.error('[Upload] Database insert failed:', dbError)
+        throw dbError
+      }
 
       const book: Book = {
         id: bookData.id,
@@ -169,8 +190,10 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       }
 
       setBooks(prev => [book, ...prev])
+      console.log('[Upload] ✓ Upload complete! Total time:', Math.round(performance.now() - startTime), 'ms')
       return book
     } catch (err) {
+      console.error('[Upload] ✗ Upload failed after', Math.round(performance.now() - startTime), 'ms:', err)
       setError(err instanceof Error ? err.message : 'Failed to upload book')
       return null
     } finally {
