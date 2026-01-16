@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Mail, Lock, Loader2 } from 'lucide-react'
+import { X, Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 interface AuthModalProps {
@@ -16,6 +16,7 @@ export default function AuthModal({ mode, onClose, onSwitchMode }: AuthModalProp
   const [error, setError] = useState<string | null>(null)
   const [showResetPassword, setShowResetPassword] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -133,19 +134,28 @@ export default function AuthModal({ mode, onClose, onSwitchMode }: AuthModalProp
                 />
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
                   minLength={6}
-                  className="w-full pl-11 pr-4 py-3 rounded-lg border transition-colors"
+                  className="w-full pl-11 pr-11 py-3 rounded-lg border transition-colors"
                   style={{
                     backgroundColor: 'var(--color-bg)',
                     borderColor: 'var(--color-border)',
                     color: 'var(--color-text)',
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:opacity-70 transition-opacity"
+                  style={{ color: 'var(--color-text-muted)' }}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
           )}
