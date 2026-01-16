@@ -57,11 +57,24 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
             console.log('[epubParser] Loading section', i, section)
             const contents = await section.load(book.load.bind(book))
             console.log('[epubParser] Section contents:', contents)
+            console.log('[epubParser] Contents type:', typeof contents, contents?.constructor?.name)
             
-            // contents should be a Document or have a document property
-            const doc = (contents as unknown as { document?: Document })?.document || contents as unknown as Document
-            const textContent = doc?.body?.textContent || ''
+            // contents is the <html> element, need to find body within it
+            let textContent = ''
+            if (contents instanceof Element) {
+              const body = contents.querySelector('body')
+              textContent = body?.textContent || contents.textContent || ''
+              console.log('[epubParser] Found body element:', !!body)
+            } else if ((contents as unknown as { document?: Document })?.document) {
+              const doc = (contents as unknown as { document: Document }).document
+              textContent = doc.body?.textContent || ''
+            } else {
+              // Try treating as document
+              const doc = contents as unknown as Document
+              textContent = doc?.body?.textContent || ''
+            }
             console.log('[epubParser] Text content length:', textContent.length)
+            console.log('[epubParser] Text preview:', textContent.slice(0, 100))
             
             // Split into words, cleaning up whitespace
             const itemWords = textContent
