@@ -57,22 +57,27 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
             console.log('[epubParser] Loading section', i, section)
             const contents = await section.load(book.load.bind(book))
             console.log('[epubParser] Section contents:', contents)
-            console.log('[epubParser] Contents type:', typeof contents, contents?.constructor?.name)
             
-            // contents is the <html> element, need to find body within it
+            // contents could be an Element (html element) or have a document property
+            // Cast to any to handle epub.js's dynamic return types
+            const contentsAny = contents as unknown as Element | { document?: Document }
             let textContent = ''
-            if (contents instanceof Element) {
-              const body = contents.querySelector('body')
-              textContent = body?.textContent || contents.textContent || ''
-              console.log('[epubParser] Found body element:', !!body)
-            } else if ((contents as unknown as { document?: Document })?.document) {
-              const doc = (contents as unknown as { document: Document }).document
-              textContent = doc.body?.textContent || ''
-            } else {
-              // Try treating as document
-              const doc = contents as unknown as Document
-              textContent = doc?.body?.textContent || ''
+            
+            // Try as Element first (querySelector approach)
+            if ('querySelector' in contentsAny && typeof contentsAny.querySelector === 'function') {
+              const body = contentsAny.querySelector('body')
+              textContent = body?.textContent || (contentsAny as Element).textContent || ''
+              console.log('[epubParser] Found body via querySelector:', !!body)
+            } else if ('document' in contentsAny && contentsAny.document) {
+              // Has document property
+              textContent = contentsAny.document.body?.textContent || ''
+              console.log('[epubParser] Found body via document property')
+            } else if ('body' in contentsAny) {
+              // Might be a Document directly
+              textContent = (contentsAny as unknown as Document).body?.textContent || ''
+              console.log('[epubParser] Found body directly')
             }
+            
             console.log('[epubParser] Text content length:', textContent.length)
             console.log('[epubParser] Text preview:', textContent.slice(0, 100))
             
