@@ -166,8 +166,23 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     setError(null)
     const startTime = performance.now()
 
+    // Limits
+    const MAX_FILE_SIZE_MB = 10
+    const MAX_BOOKS_PER_USER = 5
+
     try {
       console.log('[Upload] Starting upload:', { fileName: file.name, fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB` })
+      
+      // Check file size limit
+      const fileSizeMB = file.size / 1024 / 1024
+      if (fileSizeMB > MAX_FILE_SIZE_MB) {
+        throw new Error(`File too large (${fileSizeMB.toFixed(1)} MB). Maximum size is ${MAX_FILE_SIZE_MB} MB.`)
+      }
+
+      // Check book count limit (only for signed-in users)
+      if (user && books.length >= MAX_BOOKS_PER_USER) {
+        throw new Error(`Library full. You can have up to ${MAX_BOOKS_PER_USER} books. Delete a book to add more.`)
+      }
       
       // Step 0: Extract from zip if needed
       let epubFile = file
