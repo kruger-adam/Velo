@@ -82,7 +82,31 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
               const h3 = contentsAny.querySelector('h3')
               // Also try common title class patterns
               const titleEl = contentsAny.querySelector('.chapter-title, .title, [class*="chapter"], [class*="heading"]')
-              chapterTitle = (h1?.textContent || h2?.textContent || h3?.textContent || titleEl?.textContent || '').trim()
+              
+              // Get the primary heading
+              const primaryHeading = (h1?.textContent || h2?.textContent || h3?.textContent || titleEl?.textContent || '').trim()
+              chapterTitle = primaryHeading
+              
+              // If heading is short (like "1", "2", "PART ONE"), look for a subtitle in the next sibling or h2
+              if (primaryHeading.length > 0 && primaryHeading.length < 15) {
+                // Check if there's a subtitle heading (e.g., h1 = "1", h2 = "Addiction, Straight Up")
+                let subtitleEl = null
+                if (h1 && h2 && h1.textContent?.trim() === primaryHeading) {
+                  subtitleEl = h2
+                } else if (h2 && h3 && h2.textContent?.trim() === primaryHeading) {
+                  subtitleEl = h3
+                }
+                
+                // Also check for subtitle class patterns
+                if (!subtitleEl) {
+                  subtitleEl = contentsAny.querySelector('.subtitle, .chapter-subtitle, [class*="subtitle"]')
+                }
+                
+                const subtitle = subtitleEl?.textContent?.trim()
+                if (subtitle && subtitle.length > 2 && subtitle.length < 80 && !subtitle.endsWith('.')) {
+                  chapterTitle = `${primaryHeading} ${subtitle}`
+                }
+              }
               
               // If still no title, use the first non-empty text line (often the chapter name)
               if (!chapterTitle && textContent) {
@@ -92,6 +116,20 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
                   const firstLine = lines[0]
                   if (firstLine.length > 0 && firstLine.length < 80 && !firstLine.includes('.')) {
                     chapterTitle = firstLine
+                    
+                    // If title is very short (like just "1" or "2"), try to get subtitle from next lines
+                    if (firstLine.length < 15 && lines.length > 1) {
+                      // Look for a subtitle in the next few lines
+                      for (let lineIdx = 1; lineIdx < Math.min(lines.length, 4); lineIdx++) {
+                        const nextLine = lines[lineIdx]
+                        // Good subtitle: reasonably short, no periods at end, not just numbers
+                        if (nextLine.length > 2 && nextLine.length < 80 && 
+                            !nextLine.endsWith('.') && !/^\d+$/.test(nextLine)) {
+                          chapterTitle = `${firstLine} ${nextLine}`
+                          break
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -108,6 +146,18 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
                 const lines = textContent.split('\n').map(l => l.trim()).filter(l => l.length > 0)
                 if (lines.length > 0 && lines[0].length < 80 && !lines[0].includes('.')) {
                   chapterTitle = lines[0]
+                  
+                  // If title is very short, try to get subtitle from next lines
+                  if (lines[0].length < 15 && lines.length > 1) {
+                    for (let lineIdx = 1; lineIdx < Math.min(lines.length, 4); lineIdx++) {
+                      const nextLine = lines[lineIdx]
+                      if (nextLine.length > 2 && nextLine.length < 80 && 
+                          !nextLine.endsWith('.') && !/^\d+$/.test(nextLine)) {
+                        chapterTitle = `${lines[0]} ${nextLine}`
+                        break
+                      }
+                    }
+                  }
                 }
               }
               console.log('[epubParser] Found body via document property')
