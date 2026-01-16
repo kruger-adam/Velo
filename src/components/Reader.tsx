@@ -276,7 +276,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
       {/* Header - hidden during playback */}
       <header 
         className={`
-          px-6 pt-6 pb-4 flex items-center justify-between border-b safe-top
+          px-6 pt-10 pb-4 flex items-center justify-between border-b safe-top
           transition-opacity duration-300
           ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}

@@ -51,7 +51,7 @@ export default function Landing({ onStartReading }: LandingProps) {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--color-bg)' }}>
       {/* Header */}
-      <header className="px-6 pt-6 pb-4 flex items-center justify-between border-b safe-top" style={{ borderColor: 'var(--color-border)' }}>
+      <header className="px-6 pt-10 pb-4 flex items-center justify-between border-b safe-top" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent)' }}>
             <Zap className="w-5 h-5 text-white" />

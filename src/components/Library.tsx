@@ -84,7 +84,7 @@ export default function Library({ onOpenBook }: LibraryProps) {
 
       {/* Header */}
       <header 
-        className="px-6 pt-6 pb-4 flex items-center justify-between border-b sticky top-0 z-40 safe-top"
+        className="px-6 pt-10 pb-4 flex items-center justify-between border-b sticky top-0 z-40 safe-top"
         style={{ 
           borderColor: 'var(--color-border)',
           backgroundColor: 'var(--color-bg)',
