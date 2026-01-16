@@ -129,6 +129,16 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const addSampleBook = useCallback(async () => {
     if (!user) return null
     
+    // Prevent duplicate additions using localStorage flag
+    const sampleBookKey = `velo-sample-added-${user.id}`
+    if (localStorage.getItem(sampleBookKey)) {
+      console.log('[BookContext] Sample book already added for this user')
+      return null
+    }
+    
+    // Mark as adding immediately to prevent race conditions
+    localStorage.setItem(sampleBookKey, 'true')
+    
     try {
       console.log('[BookContext] Adding sample book for new user...')
       const response = await fetch('/sample-book.epub')
@@ -186,6 +196,8 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       } as Book
     } catch (err) {
       console.error('[BookContext] Failed to add sample book:', err)
+      // Clear the flag so it can be retried
+      localStorage.removeItem(`velo-sample-added-${user.id}`)
       return null
     }
   }, [user])
