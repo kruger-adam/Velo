@@ -1,0 +1,19 @@
+{
+  "name": "Velo — RSVP Speed Reader",
+  "short_name": "Velo",
+  "description": "Speed read any ePub book with RSVP (Rapid Serial Visual Presentation)",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#e67e22",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/velo-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
