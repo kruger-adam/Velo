@@ -103,6 +103,7 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
               .replace(/\s+/g, ' ')
               .trim()
               .split(' ')
+              .filter(word => word.length > 0)
             
             // Add chapter if we found a meaningful title and it has content
             if (chapterTitle && itemWords.length > 0) {
@@ -116,7 +117,6 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
                 console.log('[epubParser] Found chapter:', chapterTitle, 'at word index:', words.length)
               }
             }
-              .filter(word => word.length > 0)
             
             console.log('[epubParser] Words from section', i, ':', itemWords.length)
             words.push(...itemWords)
