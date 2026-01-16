@@ -55,6 +55,7 @@ export default function Library({ onOpenBook }: LibraryProps) {
     onDrop,
     accept: {
       'application/epub+zip': ['.epub'],
+      'application/zip': ['.zip'],
     },
     maxFiles: 1,
     noClick: true,
@@ -187,7 +188,7 @@ function UploadButton({
       <input
         ref={inputRef}
         type="file"
-        accept=".epub"
+        accept=".epub,.zip"
         onChange={handleChange}
         className="hidden"
       />
@@ -236,7 +237,7 @@ function EmptyLibrary({
       <input
         ref={inputRef}
         type="file"
-        accept=".epub"
+        accept=".epub,.zip"
         onChange={handleChange}
         className="hidden"
       />

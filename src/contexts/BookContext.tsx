@@ -1,7 +1,49 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
+import JSZip from 'jszip'
 import { useAuth } from './AuthContext'
 import { supabase } from '../lib/supabase'
 import { parseEpub } from '../lib/epubParser'
+
+// Helper to extract .epub from .zip files
+async function extractEpubFromZip(file: File): Promise<File> {
+  // Check if it's a .zip file (not already an epub)
+  const isZip = file.name.toLowerCase().endsWith('.zip')
+  
+  if (!isZip) {
+    return file // Already an epub, return as-is
+  }
+  
+  console.log('[Upload] Detected .zip file, extracting ePub...')
+  
+  const zip = await JSZip.loadAsync(file)
+  
+  // Find .epub file inside the zip
+  let epubFileName: string | null = null
+  let epubFile: JSZip.JSZipObject | null = null
+  
+  zip.forEach((relativePath, zipEntry) => {
+    if (relativePath.toLowerCase().endsWith('.epub') && !zipEntry.dir) {
+      epubFileName = relativePath
+      epubFile = zipEntry
+    }
+  })
+  
+  if (!epubFile || !epubFileName) {
+    throw new Error('No .epub file found inside the zip archive')
+  }
+  
+  console.log('[Upload] Found ePub in zip:', epubFileName)
+  
+  // Extract the epub as a blob
+  const epubBlob = await epubFile.async('blob')
+  
+  // Create a new File object with the correct name
+  const extractedFile = new File([epubBlob], epubFileName, { type: 'application/epub+zip' })
+  
+  console.log('[Upload] Extracted ePub:', { name: extractedFile.name, size: `${(extractedFile.size / 1024 / 1024).toFixed(2)} MB` })
+  
+  return extractedFile
+}
 
 export interface Book {
   id: string
@@ -86,10 +128,18 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('[Upload] Starting upload:', { fileName: file.name, fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB` })
       
+      // Step 0: Extract from zip if needed
+      let epubFile = file
+      if (file.name.toLowerCase().endsWith('.zip')) {
+        const extractStart = performance.now()
+        epubFile = await extractEpubFromZip(file)
+        console.log('[Upload] Zip extraction complete in', Math.round(performance.now() - extractStart), 'ms')
+      }
+      
       // Step 1: Parse ePub
       const parseStart = performance.now()
       console.log('[Upload] Step 1/4: Parsing ePub...')
-      const parsed = await parseEpub(file)
+      const parsed = await parseEpub(epubFile)
       console.log('[Upload] Step 1/4: Parsing complete in', Math.round(performance.now() - parseStart), 'ms', {
         title: parsed.title,
         wordsCount: parsed.words.length,
@@ -116,14 +166,14 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       // Signed-in: upload to Supabase
       if (!user) throw new Error('Not authenticated')
 
-      const filePath = `${user.id}/${Date.now()}-${file.name}`
+      const filePath = `${user.id}/${Date.now()}-${epubFile.name}`
       
       // Step 2: Upload file to storage
       const uploadStart = performance.now()
       console.log('[Upload] Step 2/4: Uploading ePub to storage...')
       const { error: uploadError } = await supabase.storage
         .from('books')
-        .upload(filePath, file)
+        .upload(filePath, epubFile)
       console.log('[Upload] Step 2/4: File upload complete in', Math.round(performance.now() - uploadStart), 'ms')
 
       if (uploadError) {

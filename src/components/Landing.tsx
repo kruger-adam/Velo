@@ -33,6 +33,7 @@ export default function Landing({ onStartReading }: LandingProps) {
     onDrop,
     accept: {
       'application/epub+zip': ['.epub'],
+      'application/zip': ['.zip'],
     },
     maxFiles: 1,
   })
