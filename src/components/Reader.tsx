@@ -251,7 +251,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
           <span className="hidden sm:inline">Back</span>
         </button>
 
-        <div className="flex-1 text-center px-4">
+        <div className="flex-1 text-center px-4 min-w-0 overflow-hidden">
           <h1 
             className="font-medium truncate text-sm sm:text-base"
             style={{ color: 'var(--color-text)' }}
