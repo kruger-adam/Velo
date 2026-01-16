@@ -45,6 +45,16 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const timeRemaining = estimateReadingTime(wordsRemaining, wpm)
   const isComplete = wordIndex >= book.totalWords - 1
 
+  // Debug logging
+  console.log('[Reader] State:', {
+    wordIndex,
+    totalWords: book.totalWords,
+    wordsArrayLength: book.words.length,
+    currentWord,
+    isComplete,
+    isPlaying,
+  })
+
   // Auto-hide controls
   const resetControlsTimeout = useCallback(() => {
     if (controlsTimeoutRef.current) {
@@ -67,11 +77,16 @@ export default function Reader({ book, onBack }: ReaderProps) {
 
   // Playback loop
   useEffect(() => {
+    console.log('[Reader] Playback effect triggered:', { isPlaying, isComplete, wpm, totalWords: book.totalWords })
     if (isPlaying && !isComplete) {
       const interval = 60000 / wpm // ms per word
+      console.log('[Reader] Starting timer with interval:', interval, 'ms')
       timerRef.current = window.setTimeout(() => {
+        console.log('[Reader] Timer fired, advancing word')
         setWordIndex(prev => Math.min(prev + 1, book.totalWords - 1))
       }, interval)
+    } else {
+      console.log('[Reader] Not starting timer because:', { isPlaying, isComplete })
     }
     return () => {
       if (timerRef.current) {
@@ -144,7 +159,11 @@ export default function Reader({ book, onBack }: ReaderProps) {
   }
 
   const handlePlayPause = () => {
-    setIsPlaying(prev => !prev)
+    console.log('[Reader] handlePlayPause called, current isPlaying:', isPlaying)
+    setIsPlaying(prev => {
+      console.log('[Reader] Toggling isPlaying from', prev, 'to', !prev)
+      return !prev
+    })
     resetControlsTimeout()
   }
 
