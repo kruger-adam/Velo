@@ -223,7 +223,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
       {/* Header - hidden during playback */}
       <header 
         className={`
-          px-6 py-4 flex items-center justify-between border-b
+          px-6 py-4 flex items-center justify-between border-b safe-top
           transition-opacity duration-300
           ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}

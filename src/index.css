@@ -43,6 +43,23 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* iOS PWA safe area support */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left, 0);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right, 0);
+}
+
 #root {
   min-height: 100vh;
 }
