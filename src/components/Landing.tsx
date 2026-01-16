@@ -59,7 +59,7 @@ export default function Landing({ onStartReading }: LandingProps) {
       const response = await fetch('/sample-book.epub')
       if (!response.ok) throw new Error('Sample book not found')
       const blob = await response.blob()
-      const file = new File([blob], 'The Great Gatsby.epub', { type: 'application/epub+zip' })
+      const file = new File([blob], 'Alice in Wonderland.epub', { type: 'application/epub+zip' })
       const book = await uploadBook(file)
       if (book) {
         onStartReading()
@@ -211,7 +211,7 @@ export default function Landing({ onStartReading }: LandingProps) {
             }}
           >
             <BookOpen className="w-5 h-5" style={{ color: 'var(--color-accent)' }} />
-            <span>Try with "The Great Gatsby"</span>
+            <span>Try with "Alice in Wonderland"</span>
             <ArrowRight className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
           </button>
 
