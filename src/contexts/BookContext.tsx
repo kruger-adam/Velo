@@ -170,7 +170,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
             title: sampleBook.title,
             author: sampleBook.author,
             file_path: `sample://${sampleBook.fileName}`, // Special prefix for sample books
-            cover_url: parsed.coverUrl, // Use embedded cover from epub
+            cover_url: null, // Sample books don't store covers (blob URLs expire)
             total_words: parsed.words.length,
           })
           .select()

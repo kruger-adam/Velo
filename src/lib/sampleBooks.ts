@@ -7,6 +7,7 @@ export interface SampleBookConfig {
   fileName: string // File name in /public/sample-books/
   title: string
   author: string
+  coverFileName?: string // Optional cover image in /public/sample-books/covers/
 }
 
 export const SAMPLE_BOOKS: SampleBookConfig[] = [
