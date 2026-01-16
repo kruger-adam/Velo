@@ -595,24 +595,24 @@ export default function Reader({ book, onBack }: ReaderProps) {
                 color: 'var(--color-text)',
               }}
             >
-              <span className="text-xs font-bold">A</span>
+              <Minus className="w-4 h-4" />
             </button>
             
             <div 
-              className="flex items-center gap-2 px-3 py-2 rounded-lg min-w-[80px] justify-center"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg min-w-[90px] justify-center"
               style={{ backgroundColor: 'var(--color-surface-elevated)' }}
             >
+              <span 
+                className="text-xs"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                Font
+              </span>
               <span 
                 className="font-mono font-medium"
                 style={{ color: 'var(--color-text)' }}
               >
                 {fontSize}
-              </span>
-              <span 
-                className="text-xs"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
-                Size
               </span>
             </div>
             
@@ -625,7 +625,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
                 color: 'var(--color-text)',
               }}
             >
-              <span className="text-lg font-bold">A</span>
+              <Plus className="w-4 h-4" />
             </button>
           </div>
         </div>
