@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { BookOpen, Upload, LogOut, Moon, Sun, Plus, Loader2 } from 'lucide-react'
+import { BookOpen, Upload, LogOut, Moon, Sun, Plus, Loader2, Trash2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useBooks, type Book } from '../contexts/BookContext'
@@ -12,7 +12,7 @@ interface LibraryProps {
 export default function Library({ onOpenBook }: LibraryProps) {
   const { user, signOut } = useAuth()
   const { isDarkMode, toggleDarkMode } = useTheme()
-  const { books, loadBooks, uploadBook, loading, getProgress } = useBooks()
+  const { books, loadBooks, uploadBook, deleteBook, loading, getProgress } = useBooks()
   const [bookProgress, setBookProgress] = useState<Record<string, number>>({})
   const [uploading, setUploading] = useState(false)
 
@@ -154,6 +154,7 @@ export default function Library({ onOpenBook }: LibraryProps) {
                 book={book}
                 progress={bookProgress[book.id] || 0}
                 onClick={() => onOpenBook(book)}
+                onDelete={() => deleteBook(book.id)}
               />
             ))}
           </div>
@@ -282,25 +283,42 @@ function EmptyLibrary({
 function BookCard({ 
   book, 
   progress, 
-  onClick 
+  onClick,
+  onDelete,
 }: { 
   book: Book
   progress: number
-  onClick: () => void 
+  onClick: () => void
+  onDelete: () => void
 }) {
+  const [showConfirm, setShowConfirm] = React.useState(false)
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (showConfirm) {
+      onDelete()
+      setShowConfirm(false)
+    } else {
+      setShowConfirm(true)
+      // Auto-hide confirm after 3 seconds
+      setTimeout(() => setShowConfirm(false), 3000)
+    }
+  }
+
   return (
-    <button
-      onClick={onClick}
-      className="group text-left transition-transform hover:scale-[1.02] active:scale-[0.98]"
-    >
-      {/* Cover with border and shadow */}
-      <div 
-        className="aspect-[2/3] rounded-xl mb-3 overflow-hidden relative shadow-lg border-2"
-        style={{ 
-          backgroundColor: 'var(--color-surface-elevated)',
-          borderColor: 'var(--color-border)',
-        }}
+    <div className="group relative">
+      <button
+        onClick={onClick}
+        className="w-full text-left transition-transform hover:scale-[1.02] active:scale-[0.98]"
       >
+        {/* Cover with border and shadow */}
+        <div 
+          className="aspect-[2/3] rounded-xl mb-3 overflow-hidden relative shadow-lg border-2"
+          style={{ 
+            backgroundColor: 'var(--color-surface-elevated)',
+            borderColor: 'var(--color-border)',
+          }}
+        >
         {book.coverUrl ? (
           <img
             src={book.coverUrl}
@@ -340,30 +358,47 @@ function BookCard({
         )}
       </div>
 
-      {/* Info - up to 5 lines for title */}
-      <h3 
-        className="font-medium text-sm line-clamp-5 mb-1 leading-snug"
-        style={{ color: 'var(--color-text)' }}
+        {/* Info - up to 5 lines for title */}
+        <h3 
+          className="font-medium text-sm line-clamp-5 mb-1 leading-snug"
+          style={{ color: 'var(--color-text)' }}
+        >
+          {book.title}
+        </h3>
+        {book.author && (
+          <p 
+            className="text-xs line-clamp-1"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            {book.author}
+          </p>
+        )}
+        {progress > 0 && (
+          <p 
+            className="text-xs mt-1"
+            style={{ color: 'var(--color-accent)' }}
+          >
+            {progress}% complete
+          </p>
+        )}
+      </button>
+
+      {/* Delete button - appears on hover */}
+      <button
+        onClick={handleDelete}
+        className={`
+          absolute top-2 right-2 p-2 rounded-lg transition-all
+          ${showConfirm ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+        `}
+        style={{ 
+          backgroundColor: showConfirm ? 'var(--color-error, #ef4444)' : 'var(--color-surface-elevated)',
+          color: showConfirm ? 'white' : 'var(--color-text-muted)',
+        }}
+        title={showConfirm ? 'Click again to confirm delete' : 'Delete book'}
       >
-        {book.title}
-      </h3>
-      {book.author && (
-        <p 
-          className="text-xs line-clamp-1"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          {book.author}
-        </p>
-      )}
-      {progress > 0 && (
-        <p 
-          className="text-xs mt-1"
-          style={{ color: 'var(--color-accent)' }}
-        >
-          {progress}% complete
-        </p>
-      )}
-    </button>
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
   )
 }
 

@@ -107,6 +107,7 @@ interface BookContextType {
   uploadBook: (file: File) => Promise<Book | null>
   loadBooks: () => Promise<void>
   selectBook: (book: Book) => Promise<void>
+  deleteBook: (bookId: string) => Promise<boolean>
   updateProgress: (wordIndex: number, wpm: number) => Promise<void>
   getProgress: (bookId: string) => Promise<ReadingProgress | null>
   clearTrialBook: () => void
@@ -366,6 +367,61 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user])
 
+  const deleteBook = useCallback(async (bookId: string): Promise<boolean> => {
+    if (!user) return false
+
+    try {
+      // Find the book to get its file path
+      const bookToDelete = books.find(b => b.id === bookId)
+      if (!bookToDelete) return false
+
+      // Delete from storage first (if file path exists)
+      if (bookToDelete.filePath) {
+        const { error: storageError } = await supabase.storage
+          .from('books')
+          .remove([bookToDelete.filePath])
+        
+        if (storageError) {
+          console.warn('[BookContext] Error deleting file from storage:', storageError)
+        }
+      }
+
+      // Delete reading progress
+      await supabase
+        .from('reading_progress')
+        .delete()
+        .eq('book_id', bookId)
+        .eq('user_id', user.id)
+
+      // Delete book record from database
+      const { error: dbError } = await supabase
+        .from('books')
+        .delete()
+        .eq('id', bookId)
+        .eq('user_id', user.id)
+
+      if (dbError) {
+        console.error('[BookContext] Error deleting book:', dbError)
+        return false
+      }
+
+      // Update local state
+      setBooks(prev => prev.filter(b => b.id !== bookId))
+      
+      // Clear current book if it was deleted
+      if (currentBook?.id === bookId) {
+        setCurrentBook(null)
+        setCurrentProgress(null)
+      }
+
+      console.log('[BookContext] Book deleted successfully:', bookId)
+      return true
+    } catch (err) {
+      console.error('[BookContext] Failed to delete book:', err)
+      return false
+    }
+  }, [user, books, currentBook])
+
   const updateProgress = useCallback(async (wordIndex: number, wpm: number) => {
     if (!currentBook) return
 
@@ -436,6 +492,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         uploadBook,
         loadBooks,
         selectBook,
+        deleteBook,
         updateProgress,
         getProgress,
         clearTrialBook,
