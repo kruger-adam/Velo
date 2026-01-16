@@ -441,7 +441,8 @@ export default function Reader({ book, onBack }: ReaderProps) {
                   className="text-sm"
                   style={{ color: 'var(--color-text-muted)' }}
                 >
-                  Click or press Space to play
+                  <span className="sm:hidden">Tap to play</span>
+                  <span className="hidden sm:inline">Click or press Space to play</span>
                 </p>
               </div>
             </div>
