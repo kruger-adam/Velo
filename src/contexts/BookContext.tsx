@@ -266,9 +266,10 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         throw new Error(`File too large (${fileSizeMB.toFixed(1)} MB). Maximum size is ${MAX_FILE_SIZE_MB} MB.`)
       }
 
-      // Check book count limit (only for signed-in users)
-      if (user && books.length >= MAX_BOOKS_PER_USER) {
-        throw new Error(`Library full. You can have up to ${MAX_BOOKS_PER_USER} books. Delete a book to add more.`)
+      // Check book count limit (only for signed-in users, sample books don't count)
+      const userUploadedBooks = books.filter(b => !isSampleBook(b.filePath))
+      if (user && userUploadedBooks.length >= MAX_BOOKS_PER_USER) {
+        throw new Error(`Library full. You can upload up to ${MAX_BOOKS_PER_USER} books. Delete a book to add more.`)
       }
       
       // Step 0: Extract from zip if needed
