@@ -38,10 +38,10 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const [progressLoaded, setProgressLoaded] = useState(false)
   const [showChapters, setShowChapters] = useState(false)
   
-  // Font size with localStorage persistence (default 3rem, range 1.5-5)
+  // Font size with localStorage persistence (default 2rem, range 1.5-6)
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem('velo-font-size')
-    return saved ? parseFloat(saved) : 3
+    return saved ? parseFloat(saved) : 2
   })
   
   // Persist font size to localStorage
@@ -248,7 +248,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
       {/* Header - hidden during playback */}
       <header 
         className={`
-          px-6 py-4 flex items-center justify-between border-b safe-top
+          px-6 pt-6 pb-4 flex items-center justify-between border-b safe-top
           transition-opacity duration-300
           ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}
