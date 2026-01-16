@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, Zap, BookOpen, Eye, ArrowRight } from 'lucide-react'
+import { Upload, Zap, BookOpen, Eye, ArrowRight, List, Type, Moon, Smartphone } from 'lucide-react'
 import { useBooks } from '../contexts/BookContext'
 import AuthModal from './AuthModal'
 
@@ -118,21 +118,36 @@ export default function Landing({ onStartReading }: LandingProps) {
         </div>
 
         {/* How it works */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-16">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto mb-16">
           <FeatureCard
-            icon={<Upload className="w-6 h-6" />}
+            icon={<Upload className="w-5 h-5" />}
             title="Upload"
-            description="Drop any ePub file to get started instantly"
+            description="Drop any ePub or zip file"
           />
           <FeatureCard
-            icon={<Eye className="w-6 h-6" />}
+            icon={<Eye className="w-5 h-5" />}
             title="Focus"
-            description="One word at a time, centered for optimal recognition"
+            description="One word at a time, ORP highlighted"
           />
           <FeatureCard
-            icon={<BookOpen className="w-6 h-6" />}
-            title="Read"
-            description="Adjust speed from 100 to 1000 words per minute"
+            icon={<Zap className="w-5 h-5" />}
+            title="Speed"
+            description="100 to 1000 words per minute"
+          />
+          <FeatureCard
+            icon={<List className="w-5 h-5" />}
+            title="Chapters"
+            description="Jump to any chapter instantly"
+          />
+          <FeatureCard
+            icon={<Type className="w-5 h-5" />}
+            title="Font Size"
+            description="Adjust text size to your preference"
+          />
+          <FeatureCard
+            icon={<Moon className="w-5 h-5" />}
+            title="Dark Mode"
+            description="Easy on the eyes, day or night"
           />
         </div>
 
@@ -264,16 +279,16 @@ function FeatureCard({
 }) {
   return (
     <div 
-      className="p-6 rounded-xl"
+      className="p-4 rounded-xl"
       style={{ backgroundColor: 'var(--color-surface)' }}
     >
       <div 
-        className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
+        className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
         style={{ backgroundColor: 'var(--color-surface-elevated)', color: 'var(--color-accent)' }}
       >
         {icon}
       </div>
-      <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+      <h3 className="font-semibold mb-1" style={{ color: 'var(--color-text)' }}>
         {title}
       </h3>
       <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
