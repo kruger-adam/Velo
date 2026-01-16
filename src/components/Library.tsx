@@ -303,6 +303,11 @@ function BookCard({
             src={book.coverUrl}
             alt={book.title}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              console.warn('[Library] Cover image failed to load:', book.coverUrl)
+              // Hide the broken image and show fallback
+              ;(e.target as HTMLImageElement).style.display = 'none'
+            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center p-4">

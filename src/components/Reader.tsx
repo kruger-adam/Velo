@@ -608,14 +608,6 @@ export default function Reader({ book, onBack }: ReaderProps) {
                     }}
                   >
                     <div className="font-medium">{chapter.title}</div>
-                    <div 
-                      className="text-xs mt-1"
-                      style={{ 
-                        color: isCurrentChapter ? 'rgba(255,255,255,0.7)' : 'var(--color-text-muted)' 
-                      }}
-                    >
-                      Word {chapter.wordIndex.toLocaleString()}
-                    </div>
                   </button>
                 )
               })}

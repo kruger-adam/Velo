@@ -33,11 +33,12 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
         let coverUrl: string | null = null
         try {
           const cover = await book.coverUrl()
+          console.log('[epubParser] Cover URL from epub:', cover ? cover.substring(0, 100) + '...' : 'null')
           if (cover) {
             coverUrl = cover
           }
-        } catch {
-          // Cover not available
+        } catch (coverErr) {
+          console.log('[epubParser] Cover not available:', coverErr)
         }
         
         // Extract all text content using epub.js section API

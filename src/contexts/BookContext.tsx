@@ -138,16 +138,19 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       if (fetchError) throw fetchError
 
       // For each book, we need to load it from storage to get the words
-      const loadedBooks: Book[] = (data || []).map(book => ({
-        id: book.id,
-        title: book.title,
-        author: book.author,
-        coverUrl: book.cover_url,
-        totalWords: book.total_words,
-        words: [], // Words loaded on demand when opening the book
-        chapters: [], // Chapters loaded on demand when opening the book
-        filePath: book.file_path,
-      }))
+      const loadedBooks: Book[] = (data || []).map(book => {
+        console.log('[BookContext] Loaded book:', { title: book.title, cover_url: book.cover_url })
+        return {
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          coverUrl: book.cover_url,
+          totalWords: book.total_words,
+          words: [], // Words loaded on demand when opening the book
+          chapters: [], // Chapters loaded on demand when opening the book
+          filePath: book.file_path,
+        }
+      })
 
       setBooks(loadedBooks)
     } catch (err) {
@@ -223,22 +226,32 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       let coverUrl = null
       if (parsed.coverUrl) {
         const coverStart = performance.now()
-        console.log('[Upload] Step 3/4: Uploading cover...')
-        const coverResponse = await fetch(parsed.coverUrl)
-        const coverBlob = await coverResponse.blob()
-        const coverPath = `${user.id}/${Date.now()}-cover.jpg`
-        
-        const { error: coverError } = await supabase.storage
-          .from('books')
-          .upload(coverPath, coverBlob)
-        
-        if (!coverError) {
-          const { data: urlData } = supabase.storage
+        console.log('[Upload] Step 3/4: Uploading cover...', { sourceCoverUrl: parsed.coverUrl.substring(0, 100) })
+        try {
+          const coverResponse = await fetch(parsed.coverUrl)
+          console.log('[Upload] Cover fetch response:', { ok: coverResponse.ok, status: coverResponse.status, type: coverResponse.type })
+          const coverBlob = await coverResponse.blob()
+          console.log('[Upload] Cover blob:', { size: coverBlob.size, type: coverBlob.type })
+          
+          // Determine correct extension based on blob type
+          const ext = coverBlob.type.includes('png') ? 'png' : coverBlob.type.includes('gif') ? 'gif' : 'jpg'
+          const coverPath = `${user.id}/${Date.now()}-cover.${ext}`
+          
+          const { error: coverError } = await supabase.storage
             .from('books')
-            .getPublicUrl(coverPath)
-          coverUrl = urlData.publicUrl
-        } else {
-          console.warn('[Upload] Cover upload failed (non-fatal):', coverError)
+            .upload(coverPath, coverBlob, { contentType: coverBlob.type })
+          
+          if (!coverError) {
+            const { data: urlData } = supabase.storage
+              .from('books')
+              .getPublicUrl(coverPath)
+            coverUrl = urlData.publicUrl
+            console.log('[Upload] Cover public URL:', coverUrl)
+          } else {
+            console.warn('[Upload] Cover upload failed (non-fatal):', coverError)
+          }
+        } catch (coverFetchErr) {
+          console.warn('[Upload] Cover fetch failed:', coverFetchErr)
         }
         console.log('[Upload] Step 3/4: Cover upload complete in', Math.round(performance.now() - coverStart), 'ms')
       } else {
