@@ -69,6 +69,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
     wordIndex,
     totalWords: book.totalWords,
     wordsArrayLength: book.words.length,
+    chaptersCount: book.chapters?.length || 0,
     currentWord,
     isComplete,
     isPlaying,
@@ -261,7 +262,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {book.chapters.length > 0 && (
+          {book.chapters && book.chapters.length > 0 && (
             <button
               onClick={() => setShowChapters(true)}
               className="p-2 rounded-lg transition-colors hover:opacity-70"
@@ -269,7 +270,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
                 backgroundColor: 'var(--color-surface-elevated)',
                 color: 'var(--color-text)',
               }}
-              title="Chapters"
+              title={`Chapters (${book.chapters.length})`}
             >
               <List className="w-5 h-5" />
             </button>
