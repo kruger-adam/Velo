@@ -89,7 +89,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
     isPlaying,
   })
 
-  // Auto-hide controls
+  // Auto-hide controls during playback
   const resetControlsTimeout = useCallback(() => {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current)
@@ -98,16 +98,49 @@ export default function Reader({ book, onBack }: ReaderProps) {
     if (isPlaying) {
       controlsTimeoutRef.current = window.setTimeout(() => {
         setShowControls(false)
-      }, 3000)
+      }, 2000) // Hide after 2 seconds of inactivity
     }
   }, [isPlaying])
 
-  // Handle mouse movement to show controls
+  // Toggle controls visibility (for tap on mobile)
+  const toggleControls = useCallback(() => {
+    if (isPlaying) {
+      if (showControls) {
+        // If controls are showing, hide them immediately
+        if (controlsTimeoutRef.current) {
+          clearTimeout(controlsTimeoutRef.current)
+        }
+        setShowControls(false)
+      } else {
+        // If controls are hidden, show them and start timeout
+        resetControlsTimeout()
+      }
+    }
+  }, [isPlaying, showControls, resetControlsTimeout])
+
+  // Handle mouse movement to show controls (desktop)
   useEffect(() => {
-    const handleMouseMove = () => resetControlsTimeout()
+    const handleMouseMove = () => {
+      if (isPlaying && !showControls) {
+        resetControlsTimeout()
+      }
+    }
     window.addEventListener('mousemove', handleMouseMove)
     return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [resetControlsTimeout])
+  }, [resetControlsTimeout, isPlaying, showControls])
+
+  // Start auto-hide timer when playback starts
+  useEffect(() => {
+    if (isPlaying) {
+      resetControlsTimeout()
+    } else {
+      // Show controls when paused
+      setShowControls(true)
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current)
+      }
+    }
+  }, [isPlaying, resetControlsTimeout])
 
   // Playback loop
   useEffect(() => {
@@ -201,6 +234,17 @@ export default function Reader({ book, onBack }: ReaderProps) {
       return !prev
     })
     resetControlsTimeout()
+  }
+
+  // Handle tap on reading area - show controls if hidden during playback, otherwise toggle play/pause
+  const handleReadingAreaTap = () => {
+    if (isPlaying && !showControls) {
+      // If playing and controls hidden, just show controls (don't pause)
+      resetControlsTimeout()
+    } else {
+      // Otherwise toggle play/pause
+      handlePlayPause()
+    }
   }
 
   const handleSkipBack = () => {
@@ -326,10 +370,10 @@ export default function Reader({ book, onBack }: ReaderProps) {
         </div>
       )}
 
-      {/* Word display area */}
+      {/* Word display area - tap to show controls or toggle play/pause */}
       <main 
         className="flex-1 flex items-center justify-center cursor-default"
-        onClick={handlePlayPause}
+        onClick={handleReadingAreaTap}
       >
         <div className="relative">
           {/* ORP guide line - positioned at 25% to give max room for word tail */}
