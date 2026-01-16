@@ -17,25 +17,21 @@ async function extractEpubFromZip(file: File): Promise<File> {
   
   const zip = await JSZip.loadAsync(file)
   
-  // Find .epub file inside the zip
-  let epubFileName: string | null = null
-  let epubFile: JSZip.JSZipObject | null = null
+  // Find .epub file inside the zip using Object.keys instead of forEach
+  // This avoids TypeScript narrowing issues with callbacks
+  const fileNames = Object.keys(zip.files)
+  const epubFileName = fileNames.find(name => 
+    name.toLowerCase().endsWith('.epub') && !zip.files[name].dir
+  )
   
-  zip.forEach((relativePath, zipEntry) => {
-    if (relativePath.toLowerCase().endsWith('.epub') && !zipEntry.dir) {
-      epubFileName = relativePath
-      epubFile = zipEntry
-    }
-  })
-  
-  if (!epubFile || !epubFileName) {
+  if (!epubFileName) {
     throw new Error('No .epub file found inside the zip archive')
   }
   
   console.log('[Upload] Found ePub in zip:', epubFileName)
   
   // Extract the epub as a blob
-  const epubBlob = await epubFile.async('blob')
+  const epubBlob = await zip.files[epubFileName].async('blob')
   
   // Create a new File object with the correct name
   const extractedFile = new File([epubBlob], epubFileName, { type: 'application/epub+zip' })
