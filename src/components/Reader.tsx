@@ -449,9 +449,10 @@ export default function Reader({ book, onBack }: ReaderProps) {
       {/* Controls footer */}
       <footer 
         className={`
-          px-6 py-6 transition-opacity duration-300
+          px-6 pt-6 pb-10 sm:pb-6 transition-opacity duration-300
           ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}
+        style={{ paddingBottom: `calc(2.5rem + env(safe-area-inset-bottom, 0))` }}
       >
         {/* Progress bar */}
         <div 
