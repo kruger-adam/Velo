@@ -16,13 +16,42 @@ export const SAMPLE_BOOKS: SampleBookConfig[] = [
     title: "Alice's Adventures in Wonderland",
     author: 'Lewis Carroll',
   },
-  // Add more sample books here:
-  // {
-  //   id: 'pride-and-prejudice',
-  //   fileName: 'pride-and-prejudice.epub',
-  //   title: 'Pride and Prejudice',
-  //   author: 'Jane Austen',
-  // },
+  {
+    id: 'pride-and-prejudice',
+    fileName: 'pride-and-prejudice.epub',
+    title: 'Pride and Prejudice',
+    author: 'Jane Austen',
+  },
+  {
+    id: 'romeo-and-juliet',
+    fileName: 'romeo-and-juliet.epub',
+    title: 'Romeo and Juliet',
+    author: 'William Shakespeare',
+  },
+  {
+    id: 'crime-and-punishment',
+    fileName: 'crime-and-punishment.epub',
+    title: 'Crime and Punishment',
+    author: 'Fyodor Dostoevsky',
+  },
+  {
+    id: 'moby-dick',
+    fileName: 'moby-dick.epub',
+    title: 'Moby Dick',
+    author: 'Herman Melville',
+  },
+  {
+    id: 'the-great-gatsby',
+    fileName: 'the-great-gatsby.epub',
+    title: 'The Great Gatsby',
+    author: 'F. Scott Fitzgerald',
+  },
+  {
+    id: 'frankenstein',
+    fileName: 'frankenstein.epub',
+    title: 'Frankenstein',
+    author: 'Mary Shelley',
+  },
 ]
 
 // Helper to get the public URL for a sample book
@@ -41,4 +70,3 @@ export function getSampleBookPath(filePath: string): string {
   const fileName = filePath.replace('sample://', '')
   return `/sample-books/${fileName}`
 }
-
