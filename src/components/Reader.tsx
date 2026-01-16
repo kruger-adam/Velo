@@ -2,15 +2,15 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { 
   Play, 
   Pause, 
-  SkipBack, 
-  SkipForward, 
   ArrowLeft, 
   Moon, 
   Sun,
   Minus,
   Plus,
   List,
-  X
+  X,
+  RotateCcw,
+  RotateCw
 } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useBooks, type Book } from '../contexts/BookContext'
@@ -482,14 +482,15 @@ export default function Reader({ book, onBack }: ReaderProps) {
         <div className="flex items-center justify-center gap-4 mb-6">
           <button
             onClick={handleSkipBack}
-            className="p-3 rounded-lg transition-colors hover:opacity-70"
+            className="p-2 rounded-lg transition-colors hover:opacity-70 relative"
             style={{ 
               backgroundColor: 'var(--color-surface-elevated)',
               color: 'var(--color-text)',
             }}
             title="Skip back 15 seconds"
           >
-            <SkipBack className="w-5 h-5" />
+            <RotateCcw className="w-8 h-8" strokeWidth={1.5} />
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">15</span>
           </button>
           
           <button
@@ -509,14 +510,15 @@ export default function Reader({ book, onBack }: ReaderProps) {
           
           <button
             onClick={handleSkipForward}
-            className="p-3 rounded-lg transition-colors hover:opacity-70"
+            className="p-2 rounded-lg transition-colors hover:opacity-70 relative"
             style={{ 
               backgroundColor: 'var(--color-surface-elevated)',
               color: 'var(--color-text)',
             }}
             title="Skip forward 30 seconds"
           >
-            <SkipForward className="w-5 h-5" />
+            <RotateCw className="w-8 h-8" strokeWidth={1.5} />
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">30</span>
           </button>
         </div>
 
