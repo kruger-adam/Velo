@@ -318,49 +318,51 @@ export default function Reader({ book, onBack }: ReaderProps) {
         onClick={handlePlayPause}
       >
         <div className="relative">
-          {/* ORP guide line */}
+          {/* ORP guide line - positioned at 35% to give more room for word tail */}
           <div 
-            className="absolute left-1/2 -translate-x-1/2 -top-8 w-px h-6"
-            style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5 }}
+            className="absolute -top-8 w-px h-6"
+            style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5, left: '35%' }}
           />
           <div 
-            className="absolute left-1/2 -translate-x-1/2 -bottom-8 w-px h-6"
-            style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5 }}
+            className="absolute -bottom-8 w-px h-6"
+            style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5, left: '35%' }}
           />
           
-          {/* Word with ORP highlight - ORP character is always at center */}
+          {/* Word with ORP highlight - ORP at 35% to leave room for longer word tails */}
           <div 
             className="relative select-none h-24 sm:h-28 md:h-32 lg:h-36 flex items-center"
             style={{ fontFamily: 'var(--font-mono)', minWidth: '80vw' }}
           >
-            {/* Before ORP - positioned to end at center */}
+            {/* Before ORP - positioned to end at 35% mark */}
             <span 
               className="absolute text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-right"
               style={{ 
                 color: 'var(--color-text)',
-                right: '50%',
+                right: '65%',
                 marginRight: '0.5ch', // Half of ORP width
               }}
             >
               {before}
             </span>
             
-            {/* ORP character - always at center */}
+            {/* ORP character - at 35% from left */}
             <span 
-              className="absolute left-1/2 -translate-x-1/2 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-center"
+              className="absolute text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-center"
               style={{ 
                 color: 'var(--color-orp)',
+                left: '35%',
+                transform: 'translateX(-50%)',
               }}
             >
               {orp}
             </span>
             
-            {/* After ORP - positioned to start after center */}
+            {/* After ORP - positioned to start after 35% mark */}
             <span 
               className="absolute text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-left"
               style={{ 
                 color: 'var(--color-text)',
-                left: '50%',
+                left: '35%',
                 marginLeft: '0.5ch', // Half of ORP width
               }}
             >
