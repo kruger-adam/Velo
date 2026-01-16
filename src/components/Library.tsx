@@ -293,9 +293,9 @@ function BookCard({
       onClick={onClick}
       className="group text-left transition-transform hover:scale-[1.02] active:scale-[0.98]"
     >
-      {/* Cover */}
+      {/* Cover with border and shadow */}
       <div 
-        className="aspect-[2/3] rounded-lg mb-3 overflow-hidden relative"
+        className="aspect-[2/3] rounded-xl mb-3 overflow-hidden relative shadow-lg ring-1 ring-black/10 dark:ring-white/10"
         style={{ backgroundColor: 'var(--color-surface-elevated)' }}
       >
         {book.coverUrl ? (
@@ -323,7 +323,7 @@ function BookCard({
         {/* Progress bar */}
         {progress > 0 && (
           <div 
-            className="absolute bottom-0 left-0 right-0 h-1"
+            className="absolute bottom-0 left-0 right-0 h-1.5"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
           >
             <div 
@@ -337,9 +337,9 @@ function BookCard({
         )}
       </div>
 
-      {/* Info */}
+      {/* Info - 3 lines for title */}
       <h3 
-        className="font-medium text-sm line-clamp-2 mb-1"
+        className="font-medium text-sm line-clamp-3 mb-1 leading-snug"
         style={{ color: 'var(--color-text)' }}
       >
         {book.title}
