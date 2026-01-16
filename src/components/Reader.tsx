@@ -203,11 +203,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
   }, [book.totalWords])
 
   const handleBack = () => {
-    if (isTrialMode && wordIndex > 0) {
-      setShowAuthPrompt(true)
-    } else {
-      onBack()
-    }
+    onBack()
   }
 
   const handlePlayPause = () => {
