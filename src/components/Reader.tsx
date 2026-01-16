@@ -198,7 +198,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
 
   return (
     <div 
-      className="min-h-screen flex flex-col cursor-none"
+      className={`min-h-screen flex flex-col ${showControls ? '' : 'cursor-none'}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
       onMouseMove={resetControlsTimeout}
     >
