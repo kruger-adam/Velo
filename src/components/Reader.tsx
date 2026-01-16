@@ -284,36 +284,40 @@ export default function Reader({ book, onBack }: ReaderProps) {
             style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5 }}
           />
           
-          {/* Word with ORP highlight */}
+          {/* Word with ORP highlight - ORP character is always at center */}
           <div 
-            className="flex items-center justify-center select-none"
-            style={{ fontFamily: 'var(--font-mono)' }}
+            className="relative select-none h-24 sm:h-28 md:h-32 lg:h-36 flex items-center"
+            style={{ fontFamily: 'var(--font-mono)', minWidth: '80vw' }}
           >
-            {/* Before ORP - right aligned to center */}
+            {/* Before ORP - positioned to end at center */}
             <span 
-              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-right"
+              className="absolute text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-right"
               style={{ 
                 color: 'var(--color-text)',
-                minWidth: '3ch',
+                right: '50%',
+                marginRight: '0.5ch', // Half of ORP width
               }}
             >
               {before}
             </span>
             
-            {/* ORP character */}
+            {/* ORP character - always at center */}
             <span 
-              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold"
-              style={{ color: 'var(--color-orp)' }}
+              className="absolute left-1/2 -translate-x-1/2 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-center"
+              style={{ 
+                color: 'var(--color-orp)',
+              }}
             >
               {orp}
             </span>
             
-            {/* After ORP - left aligned from center */}
+            {/* After ORP - positioned to start after center */}
             <span 
-              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-left"
+              className="absolute text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-left"
               style={{ 
                 color: 'var(--color-text)',
-                minWidth: '6ch',
+                left: '50%',
+                marginLeft: '0.5ch', // Half of ORP width
               }}
             >
               {after}
