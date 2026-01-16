@@ -56,7 +56,7 @@ export default function Landing({ onStartReading }: LandingProps) {
     }
     try {
       // Fetch the sample book from public folder
-      const response = await fetch('/sample-book.epub')
+      const response = await fetch('/sample-books/alice-in-wonderland.epub')
       if (!response.ok) throw new Error('Sample book not found')
       const blob = await response.blob()
       const file = new File([blob], 'Alice in Wonderland.epub', { type: 'application/epub+zip' })
