@@ -83,7 +83,14 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     setError(null)
 
     try {
+      console.log('[BookContext] Parsing epub file:', file.name)
       const parsed = await parseEpub(file)
+      console.log('[BookContext] Parsed result:', {
+        title: parsed.title,
+        author: parsed.author,
+        wordsCount: parsed.words.length,
+        firstWords: parsed.words.slice(0, 10),
+      })
       
       if (isTrialMode) {
         // Trial mode: keep in memory only
@@ -134,6 +141,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Insert book metadata
+      console.log('[BookContext] Inserting book with total_words:', parsed.words.length)
       const { data: bookData, error: dbError } = await supabase
         .from('books')
         .insert({
@@ -147,6 +155,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         .select()
         .single()
 
+      console.log('[BookContext] Insert result:', { bookData, dbError })
       if (dbError) throw dbError
 
       const book: Book = {
@@ -171,9 +180,17 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
 
   const selectBook = useCallback(async (book: Book) => {
     setLoading(true)
+    console.log('[BookContext] selectBook called:', { 
+      bookId: book.id, 
+      title: book.title,
+      totalWords: book.totalWords,
+      wordsLength: book.words.length,
+      filePath: book.filePath 
+    })
     try {
       // If words aren't loaded, load them from storage
       if (book.words.length === 0 && book.filePath && user) {
+        console.log('[BookContext] Loading words from storage...')
         const { data, error } = await supabase.storage
           .from('books')
           .download(book.filePath)
@@ -182,9 +199,11 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         
         const file = new File([data], 'book.epub')
         const parsed = await parseEpub(file)
-        book = { ...book, words: parsed.words }
+        console.log('[BookContext] Loaded words from storage:', parsed.words.length)
+        book = { ...book, words: parsed.words, totalWords: parsed.words.length }
       }
 
+      console.log('[BookContext] Setting currentBook:', { totalWords: book.totalWords, wordsLength: book.words.length })
       setCurrentBook(book)
 
       // Load progress
