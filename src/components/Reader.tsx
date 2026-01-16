@@ -38,6 +38,20 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const [progressLoaded, setProgressLoaded] = useState(false)
   const [showChapters, setShowChapters] = useState(false)
   
+  // Font size with localStorage persistence (default 3rem, range 1.5-5)
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem('velo-font-size')
+    return saved ? parseFloat(saved) : 3
+  })
+  
+  // Persist font size to localStorage
+  useEffect(() => {
+    localStorage.setItem('velo-font-size', fontSize.toString())
+  }, [fontSize])
+  
+  const increaseFontSize = () => setFontSize(prev => Math.min(prev + 0.5, 6))
+  const decreaseFontSize = () => setFontSize(prev => Math.max(prev - 0.5, 1.5))
+  
   const timerRef = useRef<number | null>(null)
   const controlsTimeoutRef = useRef<number | null>(null)
   const lastSaveRef = useRef<number>(0)
@@ -318,52 +332,55 @@ export default function Reader({ book, onBack }: ReaderProps) {
         onClick={handlePlayPause}
       >
         <div className="relative">
-          {/* ORP guide line - positioned at 35% to give more room for word tail */}
+          {/* ORP guide line - positioned at 25% to give max room for word tail */}
           <div 
             className="absolute -top-8 w-px h-6"
-            style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5, left: '35%' }}
+            style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5, left: '25%' }}
           />
           <div 
             className="absolute -bottom-8 w-px h-6"
-            style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5, left: '35%' }}
+            style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5, left: '25%' }}
           />
           
-          {/* Word with ORP highlight - ORP at 35% to leave room for longer word tails */}
+          {/* Word with ORP highlight - ORP at 25% to leave max room for longer word tails */}
           <div 
-            className="relative select-none h-24 sm:h-28 md:h-32 lg:h-36 flex items-center"
-            style={{ fontFamily: 'var(--font-mono)', minWidth: '80vw' }}
+            className="relative select-none h-20 sm:h-24 md:h-28 lg:h-32 flex items-center"
+            style={{ fontFamily: 'var(--font-mono)', minWidth: '90vw' }}
           >
-            {/* Before ORP - positioned to end at 35% mark */}
+            {/* Before ORP - positioned to end at 25% mark */}
             <span 
-              className="absolute text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-right"
+              className="absolute text-right"
               style={{ 
                 color: 'var(--color-text)',
-                right: '65%',
-                marginRight: '0.5ch', // Half of ORP width
+                right: '75%',
+                marginRight: '0.5ch',
+                fontSize: `${fontSize}rem`,
               }}
             >
               {before}
             </span>
             
-            {/* ORP character - at 35% from left */}
+            {/* ORP character - at 25% from left */}
             <span 
-              className="absolute text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-center"
+              className="absolute font-bold text-center"
               style={{ 
                 color: 'var(--color-orp)',
-                left: '35%',
+                left: '25%',
                 transform: 'translateX(-50%)',
+                fontSize: `${fontSize}rem`,
               }}
             >
               {orp}
             </span>
             
-            {/* After ORP - positioned to start after 35% mark */}
+            {/* After ORP - positioned to start after 25% mark */}
             <span 
-              className="absolute text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-left"
+              className="absolute text-left"
               style={{ 
                 color: 'var(--color-text)',
-                left: '35%',
-                marginLeft: '0.5ch', // Half of ORP width
+                left: '25%',
+                marginLeft: '0.5ch',
+                fontSize: `${fontSize}rem`,
               }}
             >
               {after}
@@ -492,49 +509,97 @@ export default function Reader({ book, onBack }: ReaderProps) {
           <div className="w-12" /> {/* Spacer for symmetry */}
         </div>
 
-        {/* Speed control */}
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => handleSpeedChange(-50)}
-            disabled={wpm <= 100}
-            className="p-2 rounded-lg transition-colors hover:opacity-70 disabled:opacity-30"
-            style={{ 
-              backgroundColor: 'var(--color-surface-elevated)',
-              color: 'var(--color-text)',
-            }}
-          >
-            <Minus className="w-4 h-4" />
-          </button>
-          
-          <div 
-            className="flex items-center gap-2 px-4 py-2 rounded-lg min-w-[140px] justify-center"
-            style={{ backgroundColor: 'var(--color-surface-elevated)' }}
-          >
-            <span 
-              className="font-mono font-medium text-lg"
-              style={{ color: 'var(--color-text)' }}
+        {/* Speed and Font Size controls */}
+        <div className="flex items-center justify-center gap-6 flex-wrap">
+          {/* Speed control */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleSpeedChange(-50)}
+              disabled={wpm <= 100}
+              className="p-2 rounded-lg transition-colors hover:opacity-70 disabled:opacity-30"
+              style={{ 
+                backgroundColor: 'var(--color-surface-elevated)',
+                color: 'var(--color-text)',
+              }}
             >
-              {wpm}
-            </span>
-            <span 
-              className="text-sm"
-              style={{ color: 'var(--color-text-muted)' }}
+              <Minus className="w-4 h-4" />
+            </button>
+            
+            <div 
+              className="flex items-center gap-2 px-3 py-2 rounded-lg min-w-[100px] justify-center"
+              style={{ backgroundColor: 'var(--color-surface-elevated)' }}
             >
-              WPM
-            </span>
+              <span 
+                className="font-mono font-medium"
+                style={{ color: 'var(--color-text)' }}
+              >
+                {wpm}
+              </span>
+              <span 
+                className="text-xs"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                WPM
+              </span>
+            </div>
+            
+            <button
+              onClick={() => handleSpeedChange(50)}
+              disabled={wpm >= 1000}
+              className="p-2 rounded-lg transition-colors hover:opacity-70 disabled:opacity-30"
+              style={{ 
+                backgroundColor: 'var(--color-surface-elevated)',
+                color: 'var(--color-text)',
+              }}
+            >
+              <Plus className="w-4 h-4" />
+            </button>
           </div>
-          
-          <button
-            onClick={() => handleSpeedChange(50)}
-            disabled={wpm >= 1000}
-            className="p-2 rounded-lg transition-colors hover:opacity-70 disabled:opacity-30"
-            style={{ 
-              backgroundColor: 'var(--color-surface-elevated)',
-              color: 'var(--color-text)',
-            }}
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+
+          {/* Font size control */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={decreaseFontSize}
+              disabled={fontSize <= 1.5}
+              className="p-2 rounded-lg transition-colors hover:opacity-70 disabled:opacity-30"
+              style={{ 
+                backgroundColor: 'var(--color-surface-elevated)',
+                color: 'var(--color-text)',
+              }}
+            >
+              <span className="text-xs font-bold">A</span>
+            </button>
+            
+            <div 
+              className="flex items-center gap-2 px-3 py-2 rounded-lg min-w-[80px] justify-center"
+              style={{ backgroundColor: 'var(--color-surface-elevated)' }}
+            >
+              <span 
+                className="font-mono font-medium"
+                style={{ color: 'var(--color-text)' }}
+              >
+                {fontSize}
+              </span>
+              <span 
+                className="text-xs"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                Size
+              </span>
+            </div>
+            
+            <button
+              onClick={increaseFontSize}
+              disabled={fontSize >= 6}
+              className="p-2 rounded-lg transition-colors hover:opacity-70 disabled:opacity-30"
+              style={{ 
+                backgroundColor: 'var(--color-surface-elevated)',
+                color: 'var(--color-text)',
+              }}
+            >
+              <span className="text-lg font-bold">A</span>
+            </button>
+          </div>
         </div>
 
         {/* Keyboard shortcuts hint */}
