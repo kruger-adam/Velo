@@ -125,6 +125,71 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Helper to add sample book for new users
+  const addSampleBook = useCallback(async () => {
+    if (!user) return null
+    
+    try {
+      console.log('[BookContext] Adding sample book for new user...')
+      const response = await fetch('/sample-book.epub')
+      if (!response.ok) return null
+      
+      const blob = await response.blob()
+      const file = new File([blob], 'Alice in Wonderland.epub', { type: 'application/epub+zip' })
+      
+      // Parse the book
+      const parsed = await parseEpub(file)
+      
+      // Upload to storage
+      const filePath = `${user.id}/${Date.now()}-alice-in-wonderland.epub`
+      const { error: uploadError } = await supabase.storage
+        .from('books')
+        .upload(filePath, file)
+      
+      if (uploadError) throw uploadError
+      
+      // Upload cover if exists
+      let coverPath: string | null = null
+      if (parsed.coverUrl) {
+        const coverResponse = await fetch(parsed.coverUrl)
+        const coverBlob = await coverResponse.blob()
+        coverPath = `${user.id}/${Date.now()}-cover.jpg`
+        await supabase.storage.from('books').upload(coverPath, coverBlob)
+      }
+      
+      // Save to database
+      const { data: bookData, error: dbError } = await supabase
+        .from('books')
+        .insert({
+          user_id: user.id,
+          title: parsed.title,
+          author: parsed.author,
+          file_path: filePath,
+          cover_url: coverPath ? supabase.storage.from('books').getPublicUrl(coverPath).data.publicUrl : null,
+          total_words: parsed.words.length,
+        })
+        .select()
+        .single()
+      
+      if (dbError) throw dbError
+      
+      console.log('[BookContext] Sample book added successfully')
+      return {
+        id: bookData.id,
+        title: bookData.title,
+        author: bookData.author,
+        coverUrl: bookData.cover_url,
+        totalWords: bookData.total_words,
+        words: [],
+        chapters: [],
+        filePath: bookData.file_path,
+      } as Book
+    } catch (err) {
+      console.error('[BookContext] Failed to add sample book:', err)
+      return null
+    }
+  }, [user])
+
   const loadBooks = useCallback(async () => {
     if (!user) return
 
@@ -139,7 +204,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       if (fetchError) throw fetchError
 
       // For each book, we need to load it from storage to get the words
-      const loadedBooks: Book[] = (data || []).map(book => {
+      let loadedBooks: Book[] = (data || []).map(book => {
         console.log('[BookContext] Loaded book:', { title: book.title, cover_url: book.cover_url })
         return {
           id: book.id,
@@ -153,13 +218,21 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         }
       })
 
+      // If new user with no books, add Alice in Wonderland as starter
+      if (loadedBooks.length === 0) {
+        const sampleBook = await addSampleBook()
+        if (sampleBook) {
+          loadedBooks = [sampleBook]
+        }
+      }
+
       setBooks(loadedBooks)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load books')
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [user, addSampleBook])
 
   const uploadBook = useCallback(async (file: File): Promise<Book | null> => {
     setLoading(true)
