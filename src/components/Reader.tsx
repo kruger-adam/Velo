@@ -33,10 +33,26 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const [showControls, setShowControls] = useState(true)
   const [showAuthPrompt, setShowAuthPrompt] = useState(false)
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup')
+  const [progressLoaded, setProgressLoaded] = useState(false)
   
   const timerRef = useRef<number | null>(null)
   const controlsTimeoutRef = useRef<number | null>(null)
   const lastSaveRef = useRef<number>(0)
+  const initialProgressRef = useRef<number | null>(null)
+  
+  // Sync wordIndex when progress is loaded from database
+  useEffect(() => {
+    if (currentProgress && currentProgress.bookId === book.id) {
+      // Only update if this is the first load or if we haven't started reading yet
+      if (!progressLoaded || wordIndex === 0) {
+        console.log('[Reader] Syncing progress from database:', currentProgress.currentWordIndex)
+        setWordIndex(currentProgress.currentWordIndex)
+        setWpm(currentProgress.wpm)
+        initialProgressRef.current = currentProgress.currentWordIndex
+      }
+      setProgressLoaded(true)
+    }
+  }, [currentProgress, book.id, progressLoaded, wordIndex])
 
   const currentWord = book.words[wordIndex] || ''
   const { before, orp, after } = splitWordByORP(currentWord)
@@ -105,21 +121,23 @@ export default function Reader({ book, onBack }: ReaderProps) {
     }
   }, [isComplete, isPlaying, isTrialMode])
 
-  // Save progress periodically (debounced)
+  // Save progress periodically (debounced) - only after progress has loaded
   useEffect(() => {
+    if (!progressLoaded) return // Don't save until we've loaded existing progress
+    
     const now = Date.now()
     if (now - lastSaveRef.current > 2000) {
       lastSaveRef.current = now
       updateProgress(wordIndex, wpm)
     }
-  }, [wordIndex, wpm, updateProgress])
+  }, [wordIndex, wpm, updateProgress, progressLoaded])
 
-  // Save on pause
+  // Save on pause - only after progress has loaded
   useEffect(() => {
-    if (!isPlaying) {
+    if (!isPlaying && progressLoaded) {
       updateProgress(wordIndex, wpm)
     }
-  }, [isPlaying, wordIndex, wpm, updateProgress])
+  }, [isPlaying, wordIndex, wpm, updateProgress, progressLoaded])
 
   // Keyboard controls
   useEffect(() => {
