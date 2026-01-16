@@ -9,16 +9,29 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ mode, onClose, onSwitchMode }: AuthModalProps) {
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, resetPassword } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showResetPassword, setShowResetPassword] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    if (showResetPassword) {
+      const { error } = await resetPassword(email)
+      if (error) {
+        setError(error.message)
+      } else {
+        setResetSent(true)
+      }
+      setLoading(false)
+      return
+    }
 
     const { error } = mode === 'signup' 
       ? await signUp(email, password)
@@ -55,15 +68,21 @@ export default function AuthModal({ mode, onClose, onSwitchMode }: AuthModalProp
           className="text-2xl font-bold mb-2"
           style={{ color: 'var(--color-text)' }}
         >
-          {mode === 'signup' ? 'Create your account' : 'Welcome back'}
+          {showResetPassword 
+            ? 'Reset password' 
+            : mode === 'signup' 
+              ? 'Create your account' 
+              : 'Welcome back'}
         </h2>
         <p 
           className="mb-6"
           style={{ color: 'var(--color-text-muted)' }}
         >
-          {mode === 'signup' 
-            ? 'Sign up to save your books and reading progress'
-            : 'Sign in to access your library'
+          {showResetPassword
+            ? "Enter your email and we'll send you a reset link"
+            : mode === 'signup' 
+              ? 'Sign up to save your books and reading progress'
+              : 'Sign in to access your library'
           }
         </p>
 
@@ -98,67 +117,105 @@ export default function AuthModal({ mode, onClose, onSwitchMode }: AuthModalProp
             </div>
           </div>
 
-          <div>
-            <label 
-              htmlFor="password" 
-              className="block text-sm font-medium mb-2"
-              style={{ color: 'var(--color-text)' }}
-            >
-              Password
-            </label>
-            <div className="relative">
-              <Lock 
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5"
-                style={{ color: 'var(--color-text-muted)' }}
-              />
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                className="w-full pl-11 pr-4 py-3 rounded-lg border transition-colors"
-                style={{
-                  backgroundColor: 'var(--color-bg)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-text)',
-                }}
-              />
+          {!showResetPassword && (
+            <div>
+              <label 
+                htmlFor="password" 
+                className="block text-sm font-medium mb-2"
+                style={{ color: 'var(--color-text)' }}
+              >
+                Password
+              </label>
+              <div className="relative">
+                <Lock 
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5"
+                  style={{ color: 'var(--color-text-muted)' }}
+                />
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                  className="w-full pl-11 pr-4 py-3 rounded-lg border transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-bg)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text)',
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          {mode === 'signin' && !showResetPassword && (
+            <button
+              type="button"
+              onClick={() => setShowResetPassword(true)}
+              className="text-sm hover:underline"
+              style={{ color: 'var(--color-accent)' }}
+            >
+              Forgot password?
+            </button>
+          )}
 
           {error && (
             <p className="text-sm text-red-500">{error}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-            style={{ backgroundColor: 'var(--color-accent)', color: 'white' }}
-          >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              mode === 'signup' ? 'Create account' : 'Sign in'
-            )}
-          </button>
+          {resetSent ? (
+            <div 
+              className="py-3 px-4 rounded-lg text-center"
+              style={{ backgroundColor: 'var(--color-surface-elevated)' }}
+            >
+              <p style={{ color: 'var(--color-text)' }}>
+                ✓ Reset link sent! Check your email.
+              </p>
+            </div>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              style={{ backgroundColor: 'var(--color-accent)', color: 'white' }}
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : showResetPassword ? (
+                'Send reset link'
+              ) : (
+                mode === 'signup' ? 'Create account' : 'Sign in'
+              )}
+            </button>
+          )}
         </form>
 
         <p 
           className="mt-6 text-center text-sm"
           style={{ color: 'var(--color-text-muted)' }}
         >
-          {mode === 'signup' ? "Already have an account? " : "Don't have an account? "}
-          <button
-            onClick={() => onSwitchMode(mode === 'signup' ? 'signin' : 'signup')}
-            className="font-medium hover:underline"
-            style={{ color: 'var(--color-accent)' }}
-          >
-            {mode === 'signup' ? 'Sign in' : 'Sign up'}
-          </button>
+          {showResetPassword ? (
+            <button
+              onClick={() => { setShowResetPassword(false); setResetSent(false); setError(null); }}
+              className="font-medium hover:underline"
+              style={{ color: 'var(--color-accent)' }}
+            >
+              ← Back to sign in
+            </button>
+          ) : (
+            <>
+              {mode === 'signup' ? "Already have an account? " : "Don't have an account? "}
+              <button
+                onClick={() => onSwitchMode(mode === 'signup' ? 'signin' : 'signup')}
+                className="font-medium hover:underline"
+                style={{ color: 'var(--color-accent)' }}
+              >
+                {mode === 'signup' ? 'Sign in' : 'Sign up'}
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>
