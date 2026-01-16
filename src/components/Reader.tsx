@@ -15,6 +15,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext'
 import { useBooks, type Book } from '../contexts/BookContext'
 import { useAuth } from '../contexts/AuthContext'
+import { usePreferences } from '../contexts/PreferencesContext'
 import { splitWordByORP, estimateReadingTime } from '../lib/epubParser'
 import AuthModal from './AuthModal'
 
@@ -27,6 +28,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const { isDarkMode, toggleDarkMode } = useTheme()
   const { currentProgress, updateProgress } = useBooks()
   const { isTrialMode } = useAuth()
+  const { preferences, updateFontSize } = usePreferences()
   
   const [wordIndex, setWordIndex] = useState(currentProgress?.currentWordIndex || 0)
   const [wpm, setWpm] = useState(currentProgress?.wpm || 300)
@@ -37,19 +39,11 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const [progressLoaded, setProgressLoaded] = useState(false)
   const [showChapters, setShowChapters] = useState(false)
   
-  // Font size with localStorage persistence (default 2rem, range 1.5-6)
-  const [fontSize, setFontSize] = useState(() => {
-    const saved = localStorage.getItem('velo-font-size')
-    return saved ? parseFloat(saved) : 2
-  })
+  // Font size from preferences context (synced to DB for logged-in users)
+  const fontSize = preferences.fontSize
   
-  // Persist font size to localStorage
-  useEffect(() => {
-    localStorage.setItem('velo-font-size', fontSize.toString())
-  }, [fontSize])
-  
-  const increaseFontSize = () => setFontSize(prev => Math.min(prev + 0.5, 6))
-  const decreaseFontSize = () => setFontSize(prev => Math.max(prev - 0.5, 1.5))
+  const increaseFontSize = () => updateFontSize(Math.min(fontSize + 0.5, 6))
+  const decreaseFontSize = () => updateFontSize(Math.max(fontSize - 0.5, 1.5))
   
   const timerRef = useRef<number | null>(null)
   const controlsTimeoutRef = useRef<number | null>(null)
