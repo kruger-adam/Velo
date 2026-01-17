@@ -2,10 +2,23 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useAuth } from './AuthContext'
 import { supabase } from '../lib/supabase'
 
+// Available ORP (focal letter) color options
+export const ORP_COLORS = {
+  orange: { name: 'Orange', light: '#f97316', dark: '#fb923c' },
+  blue: { name: 'Blue', light: '#3b82f6', dark: '#60a5fa' },
+  green: { name: 'Green', light: '#22c55e', dark: '#4ade80' },
+  red: { name: 'Red', light: '#ef4444', dark: '#f87171' },
+  purple: { name: 'Purple', light: '#a855f7', dark: '#c084fc' },
+  cyan: { name: 'Cyan', light: '#06b6d4', dark: '#22d3ee' },
+} as const
+
+export type OrpColorKey = keyof typeof ORP_COLORS
+
 interface Preferences {
   fontSize: number
   defaultWpm: number
   darkMode: boolean
+  orpColor: OrpColorKey
 }
 
 interface PreferencesContextType {
@@ -13,6 +26,7 @@ interface PreferencesContextType {
   updateFontSize: (size: number) => void
   updateDefaultWpm: (wpm: number) => void
   updateDarkMode: (enabled: boolean) => void
+  updateOrpColor: (color: OrpColorKey) => void
   loading: boolean
 }
 
@@ -20,6 +34,7 @@ const defaultPreferences: Preferences = {
   fontSize: 2,
   defaultWpm: 300,
   darkMode: false,
+  orpColor: 'orange',
 }
 
 const PreferencesContext = createContext<PreferencesContextType | null>(null)
@@ -38,10 +53,12 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     // Load from localStorage as initial/fallback
     const savedFontSize = localStorage.getItem('velo-font-size')
     const savedDarkMode = localStorage.getItem('velo-dark-mode')
+    const savedOrpColor = localStorage.getItem('velo-orp-color') as OrpColorKey | null
     return {
       fontSize: savedFontSize ? parseFloat(savedFontSize) : defaultPreferences.fontSize,
       defaultWpm: defaultPreferences.defaultWpm,
       darkMode: savedDarkMode === 'true',
+      orpColor: savedOrpColor && savedOrpColor in ORP_COLORS ? savedOrpColor : defaultPreferences.orpColor,
     }
   })
   const [loading, setLoading] = useState(false)
@@ -70,15 +87,20 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       }
 
       if (data) {
+        const orpColor = data.orp_color && data.orp_color in ORP_COLORS 
+          ? data.orp_color as OrpColorKey 
+          : defaultPreferences.orpColor
         const newPrefs = {
           fontSize: data.font_size ?? defaultPreferences.fontSize,
           defaultWpm: data.default_wpm ?? defaultPreferences.defaultWpm,
           darkMode: data.dark_mode ?? defaultPreferences.darkMode,
+          orpColor,
         }
         setPreferences(newPrefs)
         // Sync to localStorage
         localStorage.setItem('velo-font-size', newPrefs.fontSize.toString())
         localStorage.setItem('velo-dark-mode', newPrefs.darkMode.toString())
+        localStorage.setItem('velo-orp-color', newPrefs.orpColor)
         console.log('[Preferences] Loaded from database:', newPrefs)
       }
     } catch (err) {
@@ -97,6 +119,9 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       if (updates.darkMode !== undefined) {
         localStorage.setItem('velo-dark-mode', updates.darkMode.toString())
       }
+      if (updates.orpColor !== undefined) {
+        localStorage.setItem('velo-orp-color', updates.orpColor)
+      }
       return
     }
 
@@ -112,6 +137,10 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       if (updates.darkMode !== undefined) {
         dbUpdates.dark_mode = updates.darkMode
         localStorage.setItem('velo-dark-mode', updates.darkMode.toString())
+      }
+      if (updates.orpColor !== undefined) {
+        dbUpdates.orp_color = updates.orpColor
+        localStorage.setItem('velo-orp-color', updates.orpColor)
       }
 
       const { error } = await supabase
@@ -144,6 +173,11 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     savePreferences({ darkMode: enabled })
   }, [savePreferences])
 
+  const updateOrpColor = useCallback((color: OrpColorKey) => {
+    setPreferences(prev => ({ ...prev, orpColor: color }))
+    savePreferences({ orpColor: color })
+  }, [savePreferences])
+
   return (
     <PreferencesContext.Provider
       value={{
@@ -151,6 +185,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         updateFontSize,
         updateDefaultWpm,
         updateDarkMode,
+        updateOrpColor,
         loading,
       }}
     >
@@ -158,4 +193,5 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     </PreferencesContext.Provider>
   )
 }
+
 

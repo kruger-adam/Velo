@@ -35,6 +35,7 @@ create table if not exists public.user_preferences (
   dark_mode boolean default false not null,
   default_wpm integer default 300 not null,
   font_size numeric(3,1) default 2.0 not null,
+  orp_color text default 'orange' not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -42,6 +43,10 @@ create table if not exists public.user_preferences (
 -- Migration: Add font_size column if table already exists
 -- Run this if you already have the user_preferences table:
 -- ALTER TABLE public.user_preferences ADD COLUMN IF NOT EXISTS font_size numeric(3,1) default 2.0 not null;
+
+-- Migration: Add orp_color column if table already exists
+-- Run this if you already have the user_preferences table:
+-- ALTER TABLE public.user_preferences ADD COLUMN IF NOT EXISTS orp_color text default 'orange' not null;
 
 -- Row Level Security Policies
 

@@ -15,7 +15,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext'
 import { useBooks, type Book } from '../contexts/BookContext'
 import { useAuth } from '../contexts/AuthContext'
-import { usePreferences } from '../contexts/PreferencesContext'
+import { usePreferences, ORP_COLORS, type OrpColorKey } from '../contexts/PreferencesContext'
 import { splitWordByORP, estimateReadingTime } from '../lib/epubParser'
 import AuthModal from './AuthModal'
 
@@ -28,7 +28,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const { isDarkMode, toggleDarkMode } = useTheme()
   const { currentProgress, updateProgress } = useBooks()
   const { isTrialMode } = useAuth()
-  const { preferences, updateFontSize } = usePreferences()
+  const { preferences, updateFontSize, updateOrpColor } = usePreferences()
   
   const [wordIndex, setWordIndex] = useState(currentProgress?.currentWordIndex || 0)
   const [wpm, setWpm] = useState(currentProgress?.wpm || 300)
@@ -41,6 +41,10 @@ export default function Reader({ book, onBack }: ReaderProps) {
   
   // Font size from preferences context (synced to DB for logged-in users)
   const fontSize = preferences.fontSize
+  
+  // ORP (focal letter) color from preferences
+  const orpColorKey = preferences.orpColor
+  const orpColor = isDarkMode ? ORP_COLORS[orpColorKey].dark : ORP_COLORS[orpColorKey].light
   
   const increaseFontSize = () => updateFontSize(Math.min(fontSize + 0.5, 6))
   const decreaseFontSize = () => updateFontSize(Math.max(fontSize - 0.5, 1.5))
@@ -349,11 +353,11 @@ export default function Reader({ book, onBack }: ReaderProps) {
           {/* ORP guide line - positioned at 25% to give max room for word tail */}
           <div 
             className="absolute -top-8 w-px h-6"
-            style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5, left: '25%' }}
+            style={{ backgroundColor: orpColor, opacity: 0.5, left: '25%' }}
           />
           <div 
             className="absolute -bottom-8 w-px h-6"
-            style={{ backgroundColor: 'var(--color-orp)', opacity: 0.5, left: '25%' }}
+            style={{ backgroundColor: orpColor, opacity: 0.5, left: '25%' }}
           />
           
           {/* Word with ORP highlight - ORP at 25% to leave max room for longer word tails */}
@@ -378,7 +382,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
             <span 
               className="absolute font-bold text-center"
               style={{ 
-                color: 'var(--color-orp)',
+                color: orpColor,
                 left: '25%',
                 transform: 'translateX(-50%)',
                 fontSize: `${fontSize}rem`,
@@ -603,6 +607,32 @@ export default function Reader({ book, onBack }: ReaderProps) {
             >
               <Plus className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* Focal letter color picker */}
+          <div className="flex items-center gap-2">
+            <span 
+              className="text-xs mr-1"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              Focus
+            </span>
+            {(Object.keys(ORP_COLORS) as OrpColorKey[]).map((colorKey) => {
+              const color = isDarkMode ? ORP_COLORS[colorKey].dark : ORP_COLORS[colorKey].light
+              const isSelected = colorKey === orpColorKey
+              return (
+                <button
+                  key={colorKey}
+                  onClick={() => updateOrpColor(colorKey)}
+                  className="w-6 h-6 rounded-full transition-all hover:scale-110"
+                  style={{ 
+                    backgroundColor: color,
+                    boxShadow: isSelected ? `0 0 0 2px var(--color-bg), 0 0 0 4px ${color}` : 'none',
+                  }}
+                  title={ORP_COLORS[colorKey].name}
+                />
+              )
+            })}
           </div>
         </div>
 
