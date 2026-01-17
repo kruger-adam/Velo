@@ -300,6 +300,34 @@ export default function Reader({ book, onBack }: ReaderProps) {
     setScrubberHover(null)
   }
 
+  // Touch event handlers for mobile scrubbing
+  const handleProgressTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault() // Prevent scrolling while scrubbing
+    const touch = e.touches[0]
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = touch.clientX - rect.left
+    const percent = Math.max(0, Math.min(1, x / rect.width))
+    setScrubberHover({ x, percent })
+  }
+
+  const handleProgressTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0]
+    const rect = progressBarRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const x = touch.clientX - rect.left
+    const percent = Math.max(0, Math.min(1, x / rect.width))
+    setScrubberHover({ x: Math.max(0, Math.min(rect.width, x)), percent })
+  }
+
+  const handleProgressTouchEnd = () => {
+    if (scrubberHover) {
+      // Jump to the scrubbed position
+      setWordIndex(Math.floor(scrubberHover.percent * book.totalWords))
+      resetControlsTimeout()
+    }
+    setScrubberHover(null)
+  }
+
   // Get chapter info for scrubber tooltip
   const scrubberChapter = scrubberHover 
     ? getChapterAtWordIndex(Math.floor(scrubberHover.percent * book.totalWords))
@@ -510,10 +538,13 @@ export default function Reader({ book, onBack }: ReaderProps) {
         {/* Progress bar with chapter markers */}
         <div 
           ref={progressBarRef}
-          className="h-4 rounded-full mb-6 cursor-pointer relative flex items-center"
+          className="h-8 rounded-full mb-4 cursor-pointer relative flex items-center touch-none"
           onClick={handleProgressClick}
           onMouseMove={handleProgressMouseMove}
           onMouseLeave={handleProgressMouseLeave}
+          onTouchStart={handleProgressTouchStart}
+          onTouchMove={handleProgressTouchMove}
+          onTouchEnd={handleProgressTouchEnd}
         >
           {/* Scrubber tooltip */}
           {scrubberHover && scrubberChapter && totalChapters > 0 && (
