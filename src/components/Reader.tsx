@@ -38,6 +38,8 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup')
   const [progressLoaded, setProgressLoaded] = useState(false)
   const [showChapters, setShowChapters] = useState(false)
+  const [scrubberHover, setScrubberHover] = useState<{ x: number, percent: number } | null>(null)
+  const progressBarRef = useRef<HTMLDivElement>(null)
   
   // Font size from preferences context (synced to DB for logged-in users)
   const fontSize = preferences.fontSize
@@ -269,7 +271,39 @@ export default function Reader({ book, onBack }: ReaderProps) {
     const percent = x / rect.width
     setWordIndex(Math.floor(percent * book.totalWords))
     resetControlsTimeout()
+    setScrubberHover(null)
   }
+
+  // Find chapter at a given word index
+  const getChapterAtWordIndex = (targetWordIndex: number) => {
+    if (!book.chapters || book.chapters.length === 0) return null
+    
+    let result = { chapter: book.chapters[0], index: 0 }
+    for (let i = 0; i < book.chapters.length; i++) {
+      if (targetWordIndex >= book.chapters[i].wordIndex) {
+        result = { chapter: book.chapters[i], index: i }
+      } else {
+        break
+      }
+    }
+    return result
+  }
+
+  const handleProgressMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const percent = Math.max(0, Math.min(1, x / rect.width))
+    setScrubberHover({ x, percent })
+  }
+
+  const handleProgressMouseLeave = () => {
+    setScrubberHover(null)
+  }
+
+  // Get chapter info for scrubber tooltip
+  const scrubberChapter = scrubberHover 
+    ? getChapterAtWordIndex(Math.floor(scrubberHover.percent * book.totalWords))
+    : null
 
   return (
     <div 
@@ -475,10 +509,50 @@ export default function Reader({ book, onBack }: ReaderProps) {
       >
         {/* Progress bar with chapter markers */}
         <div 
-          className="h-2 rounded-full mb-6 cursor-pointer relative"
-          style={{ backgroundColor: 'var(--color-surface-elevated)' }}
+          ref={progressBarRef}
+          className="h-4 rounded-full mb-6 cursor-pointer relative flex items-center"
           onClick={handleProgressClick}
+          onMouseMove={handleProgressMouseMove}
+          onMouseLeave={handleProgressMouseLeave}
         >
+          {/* Scrubber tooltip */}
+          {scrubberHover && scrubberChapter && totalChapters > 0 && (
+            <div 
+              className="absolute bottom-full mb-2 px-3 py-2 rounded-lg text-xs whitespace-nowrap pointer-events-none z-20"
+              style={{ 
+                left: `${scrubberHover.x}px`,
+                transform: 'translateX(-50%)',
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+            >
+              <div style={{ color: 'var(--color-text)' }} className="font-medium">
+                Ch. {scrubberChapter.index + 1}: {scrubberChapter.chapter.title}
+              </div>
+              <div style={{ color: 'var(--color-text-muted)' }} className="mt-0.5">
+                {Math.round(scrubberHover.percent * 100)}% • {scrubberChapter.index + 1} of {totalChapters}
+              </div>
+            </div>
+          )}
+          
+          {/* Scrubber indicator line */}
+          {scrubberHover && (
+            <div 
+              className="absolute top-0 w-0.5 h-full z-20 pointer-events-none"
+              style={{ 
+                left: `${scrubberHover.percent * 100}%`,
+                backgroundColor: 'var(--color-accent)',
+              }}
+            />
+          )}
+
+          {/* Track background */}
+          <div 
+            className="absolute left-0 right-0 h-2 rounded-full"
+            style={{ backgroundColor: 'var(--color-surface-elevated)' }}
+          />
+          
           {/* Chapter markers */}
           {book.chapters && book.chapters.length > 1 && book.chapters.map((chapter, index) => {
             // Skip the first chapter (starts at 0%)
@@ -487,19 +561,19 @@ export default function Reader({ book, onBack }: ReaderProps) {
             return (
               <div
                 key={index}
-                className="absolute top-0 w-0.5 h-full z-10"
+                className="absolute w-0.5 h-3 z-10 rounded-full"
                 style={{ 
                   left: `${markerPosition}%`,
                   backgroundColor: 'var(--color-border)',
+                  transform: 'translateX(-50%)',
                 }}
-                title={chapter.title}
               />
             )
           })}
           
           {/* Progress fill */}
           <div 
-            className="h-full rounded-full transition-all duration-100 relative z-0"
+            className="absolute left-0 h-2 rounded-full transition-all duration-100 z-0"
             style={{ 
               width: `${progress}%`,
               backgroundColor: 'var(--color-accent)',
