@@ -75,6 +75,18 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const timeRemaining = estimateReadingTime(wordsRemaining, wpm)
   const isComplete = wordIndex >= book.totalWords - 1
 
+  // Find current chapter based on word index
+  const currentChapter = book.chapters?.length > 0 
+    ? book.chapters.reduce((current, chapter, index) => {
+        if (wordIndex >= chapter.wordIndex) {
+          return { ...chapter, index }
+        }
+        return current
+      }, { ...book.chapters[0], index: 0 })
+    : null
+  
+  const totalChapters = book.chapters?.length || 0
+
   // Debug logging
   console.log('[Reader] State:', {
     wordIndex,
@@ -291,6 +303,17 @@ export default function Reader({ book, onBack }: ReaderProps) {
           >
             {book.title}
           </h1>
+          {currentChapter && totalChapters > 0 && (
+            <p 
+              className="text-xs truncate mt-0.5"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              {currentChapter.title}
+              <span className="opacity-60 ml-1.5">
+                ({currentChapter.index + 1} of {totalChapters})
+              </span>
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -448,14 +471,33 @@ export default function Reader({ book, onBack }: ReaderProps) {
         `}
         style={{ paddingBottom: `calc(2.5rem + env(safe-area-inset-bottom, 0))` }}
       >
-        {/* Progress bar */}
+        {/* Progress bar with chapter markers */}
         <div 
-          className="h-2 rounded-full mb-6 cursor-pointer overflow-hidden"
+          className="h-2 rounded-full mb-6 cursor-pointer relative"
           style={{ backgroundColor: 'var(--color-surface-elevated)' }}
           onClick={handleProgressClick}
         >
+          {/* Chapter markers */}
+          {book.chapters && book.chapters.length > 1 && book.chapters.map((chapter, index) => {
+            // Skip the first chapter (starts at 0%)
+            if (index === 0) return null
+            const markerPosition = (chapter.wordIndex / book.totalWords) * 100
+            return (
+              <div
+                key={index}
+                className="absolute top-0 w-0.5 h-full z-10"
+                style={{ 
+                  left: `${markerPosition}%`,
+                  backgroundColor: 'var(--color-border)',
+                }}
+                title={chapter.title}
+              />
+            )
+          })}
+          
+          {/* Progress fill */}
           <div 
-            className="h-full rounded-full transition-all duration-100"
+            className="h-full rounded-full transition-all duration-100 relative z-0"
             style={{ 
               width: `${progress}%`,
               backgroundColor: 'var(--color-accent)',
@@ -466,6 +508,9 @@ export default function Reader({ book, onBack }: ReaderProps) {
         {/* Stats */}
         <div className="flex items-center justify-between mb-6 text-sm">
           <span style={{ color: 'var(--color-text-muted)' }}>
+            {currentChapter && totalChapters > 0 && (
+              <span className="hidden sm:inline">Ch. {currentChapter.index + 1}/{totalChapters} • </span>
+            )}
             {Math.round(progress)}% complete
           </span>
           <span style={{ color: 'var(--color-text-muted)' }}>
