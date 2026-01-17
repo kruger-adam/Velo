@@ -76,15 +76,17 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const isComplete = wordIndex >= book.totalWords - 1
 
   // Find current chapter based on word index
-  const currentChapter = book.chapters?.length > 0 
-    ? book.chapters.reduce((current, chapter, index) => {
+  const currentChapterData = book.chapters?.length > 0 
+    ? book.chapters.reduce<{ chapter: typeof book.chapters[0], index: number } | null>((current, chapter, index) => {
         if (wordIndex >= chapter.wordIndex) {
-          return { ...chapter, index }
+          return { chapter, index }
         }
         return current
-      }, { ...book.chapters[0], index: 0 })
+      }, { chapter: book.chapters[0], index: 0 })
     : null
   
+  const currentChapter = currentChapterData?.chapter ?? null
+  const currentChapterIndex = currentChapterData?.index ?? 0
   const totalChapters = book.chapters?.length || 0
 
   // Debug logging
@@ -310,7 +312,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
             >
               {currentChapter.title}
               <span className="opacity-60 ml-1.5">
-                ({currentChapter.index + 1} of {totalChapters})
+                ({currentChapterIndex + 1} of {totalChapters})
               </span>
             </p>
           )}
@@ -509,7 +511,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
         <div className="flex items-center justify-between mb-6 text-sm">
           <span style={{ color: 'var(--color-text-muted)' }}>
             {currentChapter && totalChapters > 0 && (
-              <span className="hidden sm:inline">Ch. {currentChapter.index + 1}/{totalChapters} • </span>
+              <span className="hidden sm:inline">Ch. {currentChapterIndex + 1}/{totalChapters} • </span>
             )}
             {Math.round(progress)}% complete
           </span>
