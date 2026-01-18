@@ -93,6 +93,12 @@ export default function AuthModal({ mode, onClose, onSwitchMode }: AuthModalProp
                 We sent a confirmation link to <strong style={{ color: 'var(--color-text)' }}>{email}</strong>. 
                 Click the link to activate your account.
               </p>
+              <p 
+                className="mb-6 text-sm"
+                style={{ color: 'var(--color-text-muted)', opacity: 0.8 }}
+              >
+                Don't see it? Check your spam or junk folder.
+              </p>
             </div>
             <button
               onClick={onClose}
