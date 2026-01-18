@@ -800,8 +800,8 @@ export default function Reader({ book, onBack }: ReaderProps) {
           >
             {/* Invisible spacer to maintain width */}
             <span className="invisible">
-              {timeRemaining.length > chapterTimeRemaining.length + 5 
-                ? `${timeRemaining} remaining` 
+              {timeRemaining.length > chapterTimeRemaining.length 
+                ? `${timeRemaining} left in book` 
                 : `${chapterTimeRemaining} left in chapter`}
             </span>
             {/* Actual text layers */}
@@ -815,7 +815,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
               className="absolute right-0 top-0 transition-opacity duration-500 whitespace-nowrap"
               style={{ opacity: showChapterTime ? 0 : 1 }}
             >
-              {timeRemaining} remaining
+              {timeRemaining} left in book
             </span>
           </span>
         </div>
