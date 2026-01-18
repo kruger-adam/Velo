@@ -795,18 +795,25 @@ export default function Reader({ book, onBack }: ReaderProps) {
             {Math.round(progress)}% complete
           </span>
           <span 
-            className="transition-opacity duration-500 relative"
+            className="relative inline-block"
             style={{ color: 'var(--color-text-muted)' }}
           >
+            {/* Invisible spacer to maintain width */}
+            <span className="invisible">
+              {timeRemaining.length > chapterTimeRemaining.length + 5 
+                ? `${timeRemaining} remaining` 
+                : `${chapterTimeRemaining} left in chapter`}
+            </span>
+            {/* Actual text layers */}
             <span 
-              className="transition-opacity duration-500"
-              style={{ opacity: showChapterTime ? 1 : 0, position: showChapterTime ? 'relative' : 'absolute', right: 0 }}
+              className="absolute right-0 top-0 transition-opacity duration-500 whitespace-nowrap"
+              style={{ opacity: showChapterTime ? 1 : 0 }}
             >
               {chapterTimeRemaining} left in chapter
             </span>
             <span 
-              className="transition-opacity duration-500"
-              style={{ opacity: showChapterTime ? 0 : 1, position: showChapterTime ? 'absolute' : 'relative', right: 0 }}
+              className="absolute right-0 top-0 transition-opacity duration-500 whitespace-nowrap"
+              style={{ opacity: showChapterTime ? 0 : 1 }}
             >
               {timeRemaining} remaining
             </span>
