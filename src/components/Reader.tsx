@@ -547,25 +547,50 @@ export default function Reader({ book, onBack }: ReaderProps) {
           onTouchEnd={handleProgressTouchEnd}
         >
           {/* Scrubber tooltip */}
-          {scrubberHover && scrubberChapter && totalChapters > 0 && (
-            <div 
-              className="absolute bottom-full mb-2 px-3 py-2 rounded-lg text-xs whitespace-nowrap pointer-events-none z-20"
-              style={{ 
-                left: `${scrubberHover.x}px`,
-                transform: 'translateX(-50%)',
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              }}
-            >
-              <div style={{ color: 'var(--color-text)' }} className="font-medium">
-                Ch. {scrubberChapter.index + 1}: {scrubberChapter.chapter.title}
+          {scrubberHover && scrubberChapter && totalChapters > 0 && (() => {
+            const barWidth = progressBarRef.current?.offsetWidth || 0
+            const edgeThreshold = 80 // pixels from edge to start adjusting
+            const isNearLeftEdge = scrubberHover.x < edgeThreshold
+            const isNearRightEdge = scrubberHover.x > barWidth - edgeThreshold
+            
+            // Determine alignment based on position
+            let leftPosition: string
+            let transform: string
+            
+            if (isNearLeftEdge) {
+              // Left-align tooltip near left edge
+              leftPosition = '0px'
+              transform = 'translateX(0)'
+            } else if (isNearRightEdge) {
+              // Right-align tooltip near right edge
+              leftPosition = `${barWidth}px`
+              transform = 'translateX(-100%)'
+            } else {
+              // Center tooltip in the middle
+              leftPosition = `${scrubberHover.x}px`
+              transform = 'translateX(-50%)'
+            }
+            
+            return (
+              <div 
+                className="absolute bottom-full mb-2 px-3 py-2 rounded-lg text-xs whitespace-nowrap pointer-events-none z-20"
+                style={{ 
+                  left: leftPosition,
+                  transform,
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                }}
+              >
+                <div style={{ color: 'var(--color-text)' }} className="font-medium">
+                  Ch. {scrubberChapter.index + 1}: {scrubberChapter.chapter.title}
+                </div>
+                <div style={{ color: 'var(--color-text-muted)' }} className="mt-0.5">
+                  {Math.round(scrubberHover.percent * 100)}% • {scrubberChapter.index + 1} of {totalChapters}
+                </div>
               </div>
-              <div style={{ color: 'var(--color-text-muted)' }} className="mt-0.5">
-                {Math.round(scrubberHover.percent * 100)}% • {scrubberChapter.index + 1} of {totalChapters}
-              </div>
-            </div>
-          )}
+            )
+          })()}
           
           {/* Scrubber indicator line */}
           {scrubberHover && (
