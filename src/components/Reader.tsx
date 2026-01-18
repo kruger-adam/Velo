@@ -43,6 +43,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const [scrubberHover, setScrubberHover] = useState<{ x: number, percent: number } | null>(null)
   const [showSessionStats, setShowSessionStats] = useState(false)
   const [sessionStats, setSessionStats] = useState({ wordsRead: 0, timeSpentMs: 0 })
+  const [showChapterTime, setShowChapterTime] = useState(true)
   const progressBarRef = useRef<HTMLDivElement>(null)
   const sessionStartTimeRef = useRef<number | null>(null)
   const lastChapterIndexRef = useRef<number>(0)
@@ -82,6 +83,20 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const wordsRemaining = book.totalWords - wordIndex
   const timeRemaining = estimateReadingTime(wordsRemaining, wpm)
   const isComplete = wordIndex >= book.totalWords - 1
+
+  // Calculate chapter time remaining
+  const getChapterWordsRemaining = () => {
+    if (!book.chapters || book.chapters.length === 0) return wordsRemaining
+    const currentChapterIdx = book.chapters.reduce((acc, chapter, idx) => {
+      if (wordIndex >= chapter.wordIndex) return idx
+      return acc
+    }, 0)
+    const nextChapter = book.chapters[currentChapterIdx + 1]
+    if (!nextChapter) return book.totalWords - wordIndex // Last chapter
+    return nextChapter.wordIndex - wordIndex
+  }
+  const chapterWordsRemaining = getChapterWordsRemaining()
+  const chapterTimeRemaining = estimateReadingTime(chapterWordsRemaining, wpm)
 
   // Find current chapter based on word index
   const currentChapterData = book.chapters?.length > 0 
@@ -206,6 +221,17 @@ export default function Reader({ book, onBack }: ReaderProps) {
       lastChapterIndexRef.current = currentChapterIndex
     }
   }, [currentChapterIndex, isPlaying])
+
+  // Cycle between chapter time and book time display
+  useEffect(() => {
+    if (!showControls) return
+    
+    const interval = setInterval(() => {
+      setShowChapterTime(prev => !prev)
+    }, 4000) // Toggle every 4 seconds
+    
+    return () => clearInterval(interval)
+  }, [showControls])
 
   // Auto-pause at end
   useEffect(() => {
@@ -768,8 +794,22 @@ export default function Reader({ book, onBack }: ReaderProps) {
             )}
             {Math.round(progress)}% complete
           </span>
-          <span style={{ color: 'var(--color-text-muted)' }}>
-            {timeRemaining} remaining
+          <span 
+            className="transition-opacity duration-500 relative"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            <span 
+              className="transition-opacity duration-500"
+              style={{ opacity: showChapterTime ? 1 : 0, position: showChapterTime ? 'relative' : 'absolute', right: 0 }}
+            >
+              {chapterTimeRemaining} left in chapter
+            </span>
+            <span 
+              className="transition-opacity duration-500"
+              style={{ opacity: showChapterTime ? 0 : 1, position: showChapterTime ? 'absolute' : 'relative', right: 0 }}
+            >
+              {timeRemaining} remaining
+            </span>
           </span>
         </div>
 
