@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.90.1",
     "@tailwindcss/vite": "^4.1.18",
+    "canvas-confetti": "^1.9.4",
     "epubjs": "^0.3.93",
     "jszip": "^3.10.1",
     "lucide-react": "^0.562.0",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

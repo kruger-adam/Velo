@@ -10,8 +10,10 @@ import {
   List,
   X,
   RotateCcw,
-  RotateCw
+  RotateCw,
+  BookOpen
 } from 'lucide-react'
+import confetti from 'canvas-confetti'
 import { useTheme } from '../contexts/ThemeContext'
 import { useBooks, type Book } from '../contexts/BookContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -39,7 +41,11 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const [progressLoaded, setProgressLoaded] = useState(false)
   const [showChapters, setShowChapters] = useState(false)
   const [scrubberHover, setScrubberHover] = useState<{ x: number, percent: number } | null>(null)
+  const [showSessionStats, setShowSessionStats] = useState(false)
+  const [sessionStats, setSessionStats] = useState({ wordsRead: 0, timeSpentMs: 0 })
   const progressBarRef = useRef<HTMLDivElement>(null)
+  const sessionStartTimeRef = useRef<number | null>(null)
+  const lastChapterIndexRef = useRef<number>(0)
   
   // Font size from preferences context (synced to DB for logged-in users)
   const fontSize = preferences.fontSize
@@ -148,6 +154,8 @@ export default function Reader({ book, onBack }: ReaderProps) {
       timerRef.current = window.setTimeout(() => {
         console.log('[Reader] Timer fired, advancing word')
         setWordIndex(prev => Math.min(prev + 1, book.totalWords - 1))
+        // Track words read this session (only from actual playback)
+        setSessionStats(prev => ({ ...prev, wordsRead: prev.wordsRead + 1 }))
       }, interval)
     } else {
       console.log('[Reader] Not starting timer because:', { isPlaying, isComplete })
@@ -158,6 +166,46 @@ export default function Reader({ book, onBack }: ReaderProps) {
       }
     }
   }, [isPlaying, wordIndex, wpm, book.totalWords, isComplete])
+
+  // Track session time and show stats on pause
+  useEffect(() => {
+    if (isPlaying) {
+      // Start timing when playback begins
+      sessionStartTimeRef.current = Date.now()
+    } else if (sessionStartTimeRef.current !== null) {
+      // Accumulate time when pausing
+      const elapsed = Date.now() - sessionStartTimeRef.current
+      setSessionStats(prev => ({ ...prev, timeSpentMs: prev.timeSpentMs + elapsed }))
+      sessionStartTimeRef.current = null
+      
+      // Show stats modal if user read enough words (threshold: 50)
+      if (sessionStats.wordsRead >= 50) {
+        // Small delay to let the pause animation settle
+        setTimeout(() => {
+          setShowSessionStats(true)
+          
+          // Trigger confetti for milestones
+          const isMilestone = sessionStats.wordsRead >= 500 || 
+                              currentChapterIndex > lastChapterIndexRef.current
+          
+          if (isMilestone) {
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 }
+            })
+          }
+        }, 200)
+      }
+    }
+  }, [isPlaying])
+  
+  // Track chapter changes for milestone detection
+  useEffect(() => {
+    if (isPlaying) {
+      lastChapterIndexRef.current = currentChapterIndex
+    }
+  }, [currentChapterIndex, isPlaying])
 
   // Auto-pause at end
   useEffect(() => {
@@ -332,6 +380,31 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const scrubberChapter = scrubberHover 
     ? getChapterAtWordIndex(Math.floor(scrubberHover.percent * book.totalWords))
     : null
+
+  // Format time duration for display
+  const formatSessionTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    if (minutes === 0) {
+      return `${seconds} sec`
+    }
+    return `${minutes} min ${seconds} sec`
+  }
+
+  // Handle dismissing session stats
+  const handleDismissStats = () => {
+    setShowSessionStats(false)
+  }
+
+  // Handle continuing reading (dismiss and play)
+  const handleContinueReading = () => {
+    setShowSessionStats(false)
+    setIsPlaying(true)
+  }
+
+  // Calculate approx pages (250 words per page is standard)
+  const approxPages = Math.round((sessionStats.wordsRead / 250) * 10) / 10
 
   return (
     <div 
@@ -889,6 +962,129 @@ export default function Reader({ book, onBack }: ReaderProps) {
                   </button>
                 )
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Session stats modal */}
+      {showSessionStats && (
+        <div 
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          onClick={handleDismissStats}
+        >
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 transition-opacity"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          />
+          
+          {/* Stats card */}
+          <div 
+            className="relative w-full max-w-sm rounded-2xl overflow-hidden animate-slide-up"
+            style={{ backgroundColor: 'var(--color-surface)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header with icon */}
+            <div className="pt-6 pb-2 text-center">
+              <div 
+                className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3"
+                style={{ backgroundColor: 'var(--color-accent)', opacity: 0.15 }}
+              >
+                <BookOpen 
+                  className="w-8 h-8" 
+                  style={{ color: 'var(--color-accent)' }} 
+                />
+              </div>
+              <h2 
+                className="text-lg font-semibold"
+                style={{ color: 'var(--color-text)' }}
+              >
+                Great reading session!
+              </h2>
+            </div>
+            
+            {/* Stats */}
+            <div className="px-6 py-4">
+              <div 
+                className="flex items-center justify-around py-4 rounded-xl"
+                style={{ backgroundColor: 'var(--color-surface-elevated)' }}
+              >
+                <div className="text-center">
+                  <div 
+                    className="text-2xl font-bold font-mono"
+                    style={{ color: 'var(--color-text)' }}
+                  >
+                    {sessionStats.wordsRead.toLocaleString()}
+                  </div>
+                  <div 
+                    className="text-xs mt-1"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    words
+                  </div>
+                </div>
+                <div 
+                  className="w-px h-10"
+                  style={{ backgroundColor: 'var(--color-border)' }}
+                />
+                <div className="text-center">
+                  <div 
+                    className="text-2xl font-bold font-mono"
+                    style={{ color: 'var(--color-text)' }}
+                  >
+                    ~{approxPages}
+                  </div>
+                  <div 
+                    className="text-xs mt-1"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    pages
+                  </div>
+                </div>
+                <div 
+                  className="w-px h-10"
+                  style={{ backgroundColor: 'var(--color-border)' }}
+                />
+                <div className="text-center">
+                  <div 
+                    className="text-2xl font-bold font-mono"
+                    style={{ color: 'var(--color-text)' }}
+                  >
+                    {formatSessionTime(sessionStats.timeSpentMs).split(' ')[0]}
+                  </div>
+                  <div 
+                    className="text-xs mt-1"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    {formatSessionTime(sessionStats.timeSpentMs).split(' ')[1]}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Actions */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={handleDismissStats}
+                className="flex-1 py-3 rounded-xl font-medium transition-colors hover:opacity-80"
+                style={{ 
+                  backgroundColor: 'var(--color-surface-elevated)',
+                  color: 'var(--color-text)',
+                }}
+              >
+                Done
+              </button>
+              <button
+                onClick={handleContinueReading}
+                className="flex-1 py-3 rounded-xl font-medium transition-colors hover:opacity-90"
+                style={{ 
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'white',
+                }}
+              >
+                Continue
+              </button>
             </div>
           </div>
         </div>
