@@ -44,6 +44,7 @@ export default function Reader({ book, onBack }: ReaderProps) {
   const [showSessionStats, setShowSessionStats] = useState(false)
   const [sessionStats, setSessionStats] = useState({ wordsRead: 0, timeSpentMs: 0 })
   const [showChapterTime, setShowChapterTime] = useState(true)
+  const [chapterCompleteMessage, setChapterCompleteMessage] = useState<string | null>(null)
   const progressBarRef = useRef<HTMLDivElement>(null)
   const sessionStartTimeRef = useRef<number | null>(null)
   const lastChapterIndexRef = useRef<number>(0)
@@ -215,12 +216,21 @@ export default function Reader({ book, onBack }: ReaderProps) {
     }
   }, [isPlaying])
   
-  // Track chapter changes for milestone detection
+  // Track chapter changes and pause at chapter end
   useEffect(() => {
-    if (isPlaying) {
+    if (isPlaying && book.chapters && book.chapters.length > 1) {
+      // Check if we just moved to a new chapter
+      if (currentChapterIndex > lastChapterIndexRef.current) {
+        // We've entered a new chapter - pause and show message
+        const completedChapter = book.chapters[lastChapterIndexRef.current]
+        if (completedChapter) {
+          setChapterCompleteMessage(completedChapter.title)
+          setIsPlaying(false)
+        }
+      }
       lastChapterIndexRef.current = currentChapterIndex
     }
-  }, [currentChapterIndex, isPlaying])
+  }, [currentChapterIndex, isPlaying, book.chapters])
 
   // Cycle between chapter time and book time display
   useEffect(() => {
@@ -296,6 +306,10 @@ export default function Reader({ book, onBack }: ReaderProps) {
 
   const handlePlayPause = () => {
     console.log('[Reader] handlePlayPause called, current isPlaying:', isPlaying)
+    // Clear chapter complete message when resuming
+    if (!isPlaying && chapterCompleteMessage) {
+      setChapterCompleteMessage(null)
+    }
     setIsPlaying(prev => {
       console.log('[Reader] Toggling isPlaying from', prev, 'to', !prev)
       return !prev
@@ -619,19 +633,51 @@ export default function Reader({ book, onBack }: ReaderProps) {
               <div 
                 className="relative flex flex-col items-center gap-4"
               >
-                <div 
-                  className="w-20 h-20 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: 'var(--color-accent)' }}
-                >
-                  <Play className="w-10 h-10 text-white ml-1" />
-                </div>
-                <p 
-                  className="text-sm"
-                  style={{ color: 'var(--color-text-muted)' }}
-                >
-                  <span className="sm:hidden">Tap to play</span>
-                  <span className="hidden sm:inline">Click or press Space to play</span>
-                </p>
+                {chapterCompleteMessage ? (
+                  <>
+                    <div 
+                      className="text-center mb-2"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
+                      <span className="text-xs uppercase tracking-wide">Chapter complete</span>
+                    </div>
+                    <div 
+                      className="w-20 h-20 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: 'var(--color-accent)' }}
+                    >
+                      <Play className="w-10 h-10 text-white ml-1" />
+                    </div>
+                    <p 
+                      className="text-sm text-center max-w-[200px]"
+                      style={{ color: 'var(--color-text)' }}
+                    >
+                      {chapterCompleteMessage}
+                    </p>
+                    <p 
+                      className="text-xs"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
+                      <span className="sm:hidden">Tap to continue</span>
+                      <span className="hidden sm:inline">Click or press Space to continue</span>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div 
+                      className="w-20 h-20 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: 'var(--color-accent)' }}
+                    >
+                      <Play className="w-10 h-10 text-white ml-1" />
+                    </div>
+                    <p 
+                      className="text-sm"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
+                      <span className="sm:hidden">Tap to play</span>
+                      <span className="hidden sm:inline">Click or press Space to play</span>
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           )}
