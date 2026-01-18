@@ -406,6 +406,18 @@ export default function Reader({ book, onBack }: ReaderProps) {
   // Calculate approx pages (250 words per page is standard)
   const approxPages = Math.round((sessionStats.wordsRead / 250) * 10) / 10
 
+  // Get context words around current position (for context view when paused)
+  const getContextWords = () => {
+    const contextSize = 25 // words before and after
+    const start = Math.max(0, wordIndex - contextSize)
+    const end = Math.min(book.words.length, wordIndex + contextSize + 1)
+    return {
+      before: book.words.slice(start, wordIndex),
+      current: book.words[wordIndex] || '',
+      after: book.words.slice(wordIndex + 1, end),
+    }
+  }
+
   return (
     <div 
       className={`min-h-screen flex flex-col ${showControls ? '' : 'cursor-none'}`}
@@ -599,6 +611,44 @@ export default function Reader({ book, onBack }: ReaderProps) {
           )}
         </div>
       </main>
+
+      {/* Context view - shows surrounding text when paused */}
+      {!isPlaying && showControls && (
+        <div 
+          className="px-6 py-4 max-w-2xl mx-auto w-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div 
+            className="p-4 rounded-xl text-sm leading-relaxed"
+            style={{ 
+              backgroundColor: 'var(--color-surface-elevated)',
+              color: 'var(--color-text-muted)',
+            }}
+          >
+            {(() => {
+              const context = getContextWords()
+              return (
+                <p className="text-center">
+                  <span>{context.before.join(' ')}</span>
+                  {context.before.length > 0 && ' '}
+                  <span 
+                    className="font-semibold px-1 py-0.5 rounded"
+                    style={{ 
+                      color: 'var(--color-text)',
+                      backgroundColor: 'var(--color-accent)',
+                      opacity: 0.9,
+                    }}
+                  >
+                    {context.current}
+                  </span>
+                  {context.after.length > 0 && ' '}
+                  <span>{context.after.join(' ')}</span>
+                </p>
+              )
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Controls footer */}
       <footer 
